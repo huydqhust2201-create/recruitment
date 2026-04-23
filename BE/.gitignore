@@ -1,0 +1,38 @@
+HELP.md
+
+# Maven / Java build output
+target/
+build/
+out/
+*.class
+
+# Logs
+*.log
+logs/
+
+# Local IDE files
+.idea/
+*.iws
+*.iml
+*.ipr
+.vscode/
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings/
+.springBeans
+.sts4-cache
+/nbproject/private/
+/nbbuild/
+/nbdist/
+/.nb-gradle/
+
+# Local environment overrides
+.env
+.env.*
+!.env.example
+src/main/resources/application-local.yml
+src/main/resources/application-dev.yml
+src/main/resources/application-prod.yml
+src/main/resources/application-secrets.yml

@@ -1,0 +1,28 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5433/recruitment_db
+    username: postgres
+    password: 123456
+
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+server:
+  port: 8080
+
+jwt:
+  expiration: 86400000
+  refresh-expiration: 604800000
+
+minio:
+  url: http://localhost:9000
+  bucket: recruitment-cv
+
+openai:
+  api-key: ${OPENAI_API_KEY}
