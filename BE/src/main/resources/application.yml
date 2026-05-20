@@ -1,9 +1,10 @@
 spring:
+  profiles:
+    active: local  # tự động dùng application-local.yml khi dev
   datasource:
     url: jdbc:postgresql://localhost:5433/recruitment_db
     username: postgres
     password: 123456
-
   jpa:
     open-in-view: false
     hibernate:
@@ -12,16 +13,23 @@ spring:
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
+  servlet:
+    multipart:
+      max-file-size: 10MB      # quan trọng — phải có để upload CV
+      max-request-size: 10MB
 
 server:
   port: 8080
 
 jwt:
+  secret: ${JWT_SECRET}
   expiration: 86400000
   refresh-expiration: 604800000
 
 minio:
-  url: http://localhost:9000
+  url: ${MINIO_URL}
+  access-key: ${MINIO_ACCESS_KEY}
+  secret-key: ${MINIO_SECRET_KEY}
   bucket: recruitment-cv
 
 openai:

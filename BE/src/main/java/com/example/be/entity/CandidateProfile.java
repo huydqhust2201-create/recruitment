@@ -51,15 +51,15 @@ public class CandidateProfile {
     private String address;
 
     @Column(name = "career_goals", columnDefinition = "TEXT")
-    private String careerGoals;        // má»¥c tiÃªu nghá» nghiá»‡p
+    private String careerGoals;
 
-    // % hoÃ n thiá»‡n há»“ sÆ¡ â€” tÃ­nh tá»± Ä‘á»™ng
+
     @Column(name = "profile_completeness")
     @Builder.Default
     private Integer profileCompleteness = 0;
 
     @Column(name = "cv_embedding", columnDefinition = "vector(1536)")
-    @JdbcTypeCode(SqlTypes.VECTOR) // db hiá»ƒu kiá»ƒu dá»¯ liá»‡u
+    @JdbcTypeCode(SqlTypes.VECTOR)
     private float[] cvEmbedding;
 
     @Column(name = "last_active")
