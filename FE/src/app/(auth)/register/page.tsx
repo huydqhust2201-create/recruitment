@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import Input from '@/components/ui/Input';
 import Button from '@/components/ui/Button';
-import { BriefcaseIcon, EyeIcon, EyeOffIcon, UserIcon, BriefcaseIcon as RecruiterIcon } from 'lucide-react';
+import { BriefcaseIcon, EyeIcon, EyeOffIcon, UserIcon, Building2Icon as RecruiterIcon } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { cn } from '@/lib/utils';
 
@@ -56,7 +56,7 @@ export default function RegisterPage() {
     <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4 py-10">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <Link href="/" className="inline-flex items-center gap-2 text-blue-600 font-bold text-2xl">
+          <Link href="/" className="inline-flex items-center gap-2 text-[#0d7a5f] font-bold text-2xl">
             <BriefcaseIcon className="h-7 w-7" />
             RecruitAI
           </Link>
@@ -75,7 +75,7 @@ export default function RegisterPage() {
                 className={cn(
                   'flex flex-col items-center gap-2 rounded-xl border-2 p-4 text-sm font-medium transition-all',
                   form.role === r
-                    ? 'border-blue-600 bg-blue-50 text-blue-700'
+                    ? 'border-[#0d7a5f] bg-[#e8f5f0] text-[#0d7a5f]'
                     : 'border-gray-200 text-gray-600 hover:border-gray-300'
                 )}
               >
@@ -130,7 +130,7 @@ export default function RegisterPage() {
                   className={`w-full rounded-lg border px-3 py-2 pr-10 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-1 ${
                     errors.password
                       ? 'border-red-500 focus:ring-red-500'
-                      : 'border-gray-300 focus:border-blue-500 focus:ring-blue-500'
+                      : 'border-gray-300 focus:border-[#0d7a5f] focus:ring-[#0d7a5f]'
                   }`}
                 />
                 <button
@@ -161,7 +161,7 @@ export default function RegisterPage() {
 
           <p className="mt-6 text-center text-sm text-gray-500">
             Đã có tài khoản?{' '}
-            <Link href="/login" className="font-medium text-blue-600 hover:text-blue-700">
+            <Link href="/login" className="font-medium text-[#0d7a5f] hover:text-[#0a5c47]">
               Đăng nhập
             </Link>
           </p>

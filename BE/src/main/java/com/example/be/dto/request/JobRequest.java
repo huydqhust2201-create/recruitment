@@ -8,7 +8,6 @@ import lombok.Data;
 
 import java.time.LocalDate;
 import java.util.List;
-import java.util.UUID;
 
 @Data
 public class JobRequest {
@@ -30,8 +29,8 @@ public class JobRequest {
 
     private String industry;
     private String city;
-    private Integer salaryMin;
-    private Integer salaryMax;
+    private Long salaryMin;
+    private Long salaryMax;
     private boolean isSalaryPublic = true;
     private LocalDate deadline;
 
@@ -40,7 +39,7 @@ public class JobRequest {
 
     @Data
     public static class JobSkillRequest {
-        private UUID skillId;
+        private String skillName;
         private boolean isRequired;
         private String level;
     }

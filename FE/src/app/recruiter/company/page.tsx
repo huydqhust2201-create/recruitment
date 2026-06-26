@@ -8,7 +8,11 @@ import Textarea from '@/components/ui/Textarea';
 import Select from '@/components/ui/Select';
 import Button from '@/components/ui/Button';
 import { PageLoader } from '@/components/ui/LoadingSpinner';
-import { BuildingIcon, PencilIcon, CheckIcon, ShieldCheckIcon } from 'lucide-react';
+import {
+  BuildingIcon, PencilIcon, CheckIcon, ShieldCheckIcon, ShieldXIcon,
+  ExternalLinkIcon, BriefcaseIcon, ArrowRightIcon,
+} from 'lucide-react';
+import Link from 'next/link';
 import toast from 'react-hot-toast';
 import { COMPANY_SIZE_LABELS } from '@/lib/utils';
 
@@ -43,23 +47,26 @@ export default function RecruiterCompanyPage() {
   const [errors, setErrors] = useState<Partial<CompanyForm>>({});
 
   const fetchCompany = async () => {
+    const savedId = localStorage.getItem('companyId');
+    if (!savedId) {
+      setEditing(true);
+      setLoading(false);
+      return;
+    }
     try {
-      const res = await axiosInstance.get<Company[]>('/api/recruiter/companies');
-      if (Array.isArray(res.data) && res.data.length > 0) {
-        const c = res.data[0];
-        setCompany(c);
-        setForm({
-          name: c.name ?? '',
-          website: c.website ?? '',
-          industry: c.industry ?? '',
-          companySize: c.companySize ?? '',
-          description: c.description ?? '',
-          city: c.city ?? '',
-        });
-      } else {
-        setEditing(true);
-      }
+      const res = await axiosInstance.get<Company>(`/api/recruiter/companies/${savedId}`);
+      const c = res.data;
+      setCompany(c);
+      setForm({
+        name: c.name ?? '',
+        website: c.website ?? '',
+        industry: c.industry ?? '',
+        companySize: c.companySize ?? '',
+        description: c.description ?? '',
+        city: c.city ?? '',
+      });
     } catch {
+      localStorage.removeItem('companyId');
       setEditing(true);
     } finally {
       setLoading(false);
@@ -67,6 +74,14 @@ export default function RecruiterCompanyPage() {
   };
 
   useEffect(() => { fetchCompany(); }, []);
+
+  useEffect(() => {
+    const handleFocus = () => {
+      if (!editing) fetchCompany();
+    };
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
+  }, [editing]);
 
   const validate = () => {
     const e: Partial<CompanyForm> = {};
@@ -87,11 +102,14 @@ export default function RecruiterCompanyPage() {
       } else {
         const res = await axiosInstance.post<Company>('/api/recruiter/companies', form);
         setCompany(res.data);
+        localStorage.setItem('companyId', String(res.data.id));
         toast.success('Tạo công ty thành công!');
       }
+      await fetchCompany();
       setEditing(false);
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Lưu thất bại');
+      const message = err instanceof Error ? err.message : 'Lưu thất bại';
+      toast.error(message);
     } finally {
       setSaving(false);
     }
@@ -127,14 +145,14 @@ export default function RecruiterCompanyPage() {
             <div className="flex items-center gap-2">
               <h2 className="text-lg font-bold text-gray-900">{company.name}</h2>
               {company.isVerified && (
-                <span className="inline-flex items-center gap-1 rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700">
+                <span className="inline-flex items-center gap-1 rounded-full bg-[#e8f5f0] px-2 py-0.5 text-xs font-medium text-[#0d7a5f]">
                   <ShieldCheckIcon className="h-3 w-3" /> Đã xác minh
                 </span>
               )}
             </div>
             <p className="text-sm text-gray-500 mt-0.5">{company.city} · {company.industry}</p>
             {company.website && (
-              <a href={company.website} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 hover:underline mt-0.5 block">
+              <a href={company.website} target="_blank" rel="noopener noreferrer" className="text-xs text-[#0d7a5f] hover:underline mt-0.5 block">
                 {company.website}
               </a>
             )}
@@ -217,6 +235,70 @@ export default function RecruiterCompanyPage() {
           </div>
         )}
       </div>
+
+      {/* Status & impact panels */}
+      {company && (
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          {/* Verification status */}
+          <div className={`rounded-2xl border p-4 ${company.isVerified ? 'border-[#b2dfcf] bg-[#e8f5f0]' : 'border-yellow-200 bg-yellow-50'}`}>
+            <div className="flex items-center gap-2 mb-2">
+              {company.isVerified
+                ? <ShieldCheckIcon className="h-5 w-5 text-[#0d7a5f]" />
+                : <ShieldXIcon className="h-5 w-5 text-yellow-600" />
+              }
+              <p className={`font-semibold text-sm ${company.isVerified ? 'text-[#0d7a5f]' : 'text-yellow-700'}`}>
+                {company.isVerified ? 'Đã xác minh' : 'Chưa xác minh'}
+              </p>
+            </div>
+            <p className="text-xs text-gray-600">
+              {company.isVerified
+                ? 'Công ty của bạn có badge xác minh trên tất cả tin tuyển dụng, tăng độ tin cậy với ứng viên.'
+                : 'Admin RecruitAI sẽ xem xét và xác minh công ty của bạn. Badge xác minh giúp thu hút ứng viên tốt hơn.'
+              }
+            </p>
+          </div>
+
+          {/* Public page link */}
+          <Link href={`/companies/${company.id}`} target="_blank">
+            <div className="rounded-2xl border border-gray-200 bg-white p-4 hover:shadow-sm hover:border-[#b2dfcf] transition-all cursor-pointer h-full">
+              <div className="flex items-center gap-2 mb-2">
+                <ExternalLinkIcon className="h-5 w-5 text-[#0d7a5f]" />
+                <p className="font-semibold text-sm text-gray-900">Trang công ty công khai</p>
+              </div>
+              <p className="text-xs text-gray-600">
+                Ứng viên có thể xem trang giới thiệu công ty và tất cả tin tuyển dụng đang hoạt động tại đây.
+              </p>
+              <p className="text-xs font-medium mt-2 text-[#0d7a5f]">Mở trang công ty →</p>
+            </div>
+          </Link>
+
+          {/* Post job CTA */}
+          <Link href="/recruiter/jobs/create">
+            <div className="rounded-2xl border border-dashed border-gray-300 bg-white p-4 hover:shadow-sm hover:border-[#0d7a5f] transition-all cursor-pointer h-full">
+              <div className="flex items-center gap-2 mb-2">
+                <BriefcaseIcon className="h-5 w-5 text-[#0d7a5f]" />
+                <p className="font-semibold text-sm text-gray-900">Đăng tin tuyển dụng</p>
+              </div>
+              <p className="text-xs text-gray-600">
+                Thông tin công ty sẽ hiển thị trên tất cả tin tuyển dụng bạn đăng — logo, tên, thành phố.
+              </p>
+              <p className="text-xs font-medium mt-2 text-[#0d7a5f] flex items-center gap-1">
+                Tạo tin mới <ArrowRightIcon className="h-3 w-3" />
+              </p>
+            </div>
+          </Link>
+        </div>
+      )}
+
+      {/* No company yet — guidance */}
+      {!company && !editing && (
+        <div className="rounded-2xl border border-dashed border-gray-300 bg-white p-8 text-center">
+          <BuildingIcon className="mx-auto h-10 w-10 text-gray-300 mb-3" />
+          <p className="font-medium text-gray-700">Bạn chưa có thông tin công ty</p>
+          <p className="text-sm text-gray-400 mt-1 mb-4">Điền thông tin công ty để tin tuyển dụng của bạn hiển thị đầy đủ với ứng viên</p>
+          <Button onClick={() => setEditing(true)}>Tạo thông tin công ty</Button>
+        </div>
+      )}
     </div>
   );
 }

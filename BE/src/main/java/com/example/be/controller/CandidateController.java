@@ -1,11 +1,14 @@
 package com.example.be.controller;
 
 import com.example.be.dto.request.CandidateProfileRequest;
+import com.example.be.dto.response.RecommendedJobsResponse;
 import com.example.be.dto.response.CandidateProfileResponse;
 import com.example.be.dto.response.CvFileResponse;
+import com.example.be.dto.response.RecommendedJobsResponse;
 import com.example.be.entity.User;
 import com.example.be.repository.UserRepository;
 import com.example.be.service.inf.CandidateProfileService;
+import com.example.be.service.inf.JobMatchingService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -23,6 +26,7 @@ import java.util.UUID;
 public class CandidateController {
 
     private final CandidateProfileService profileService;
+    private final JobMatchingService jobMatchingService;
     private final UserRepository userRepository;
 
     // Xem hồ sơ
@@ -78,6 +82,13 @@ public class CandidateController {
             @AuthenticationPrincipal UserDetails userDetails) {
         return ResponseEntity.ok(
                 profileService.setPrimary(getUserId(userDetails), id));
+    }
+
+    @GetMapping("/jobs/recommended")
+    public ResponseEntity<RecommendedJobsResponse> getRecommendedJobs(
+            @AuthenticationPrincipal UserDetails userDetails) {
+        return ResponseEntity.ok(
+                jobMatchingService.getRecommendedJobs(getUserId(userDetails)));
     }
 
     // Helper

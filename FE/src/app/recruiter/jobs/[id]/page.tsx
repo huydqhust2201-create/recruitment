@@ -40,6 +40,9 @@ export default function RecruiterJobDetailPage() {
   const [criteria, setCriteria] = useState<JobCriteria | null>(null);
   const [loading, setLoading] = useState(true);
   const [publishingId, setPublishingId] = useState(false);
+  const [pausing, setPausing] = useState(false);
+  const [resuming, setResuming] = useState(false);
+  const [closing, setClosing] = useState(false);
   const [criteriaForm, setCriteriaForm] = useState<CriteriaForm>({
     skillWeight: 40, experienceWeight: 35, educationWeight: 25,
     passThreshold: 0.7, customInstructions: '',
@@ -127,6 +130,46 @@ export default function RecruiterJobDetailPage() {
     }
   };
 
+  const handlePause = async () => {
+    setPausing(true);
+    try {
+      await axiosInstance.put(`/api/recruiter/jobs/${id}/pause`);
+      setJob((prev) => prev ? { ...prev, status: 'PAUSED' } : prev);
+      toast.success('Đã tạm dừng tin');
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'Thao tác thất bại');
+    } finally {
+      setPausing(false);
+    }
+  };
+
+  const handleResume = async () => {
+    setResuming(true);
+    try {
+      await axiosInstance.put(`/api/recruiter/jobs/${id}/resume`);
+      setJob((prev) => prev ? { ...prev, status: 'ACTIVE' } : prev);
+      toast.success('Đã tiếp tục đăng tin');
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'Thao tác thất bại');
+    } finally {
+      setResuming(false);
+    }
+  };
+
+  const handleClose = async () => {
+    if (!confirm('Đóng tin tuyển dụng này?')) return;
+    setClosing(true);
+    try {
+      await axiosInstance.put(`/api/recruiter/jobs/${id}/close`);
+      setJob((prev) => prev ? { ...prev, status: 'CLOSED' } : prev);
+      toast.success('Đã đóng tin');
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'Thao tác thất bại');
+    } finally {
+      setClosing(false);
+    }
+  };
+
   if (loading) return <PageLoader />;
   if (!job) return null;
 
@@ -155,6 +198,26 @@ export default function RecruiterJobDetailPage() {
             <Button size="sm" loading={publishingId} onClick={handlePublish}>
               Đăng tin
             </Button>
+          )}
+          {job.status === 'ACTIVE' && (
+            <>
+              <Button variant="outline" size="sm" loading={pausing} onClick={handlePause}>
+                Tạm dừng
+              </Button>
+              <Button variant="danger" size="sm" loading={closing} onClick={handleClose}>
+                Đóng tin
+              </Button>
+            </>
+          )}
+          {job.status === 'PAUSED' && (
+            <>
+              <Button size="sm" loading={resuming} onClick={handleResume}>
+                Tiếp tục
+              </Button>
+              <Button variant="danger" size="sm" loading={closing} onClick={handleClose}>
+                Đóng tin
+              </Button>
+            </>
           )}
         </div>
       </div>
@@ -186,7 +249,7 @@ export default function RecruiterJobDetailPage() {
                 <h3 className="text-sm font-medium text-gray-700 mb-2">Kỹ năng</h3>
                 <div className="flex flex-wrap gap-2">
                   {job.skills.map((s) => (
-                    <span key={s.skillId} className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${s.isRequired ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600'}`}>
+                    <span key={s.skillId} className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${s.isRequired ? 'bg-[#e8f5f0] text-[#0d7a5f]' : 'bg-gray-100 text-gray-600'}`}>
                       {s.skillName}{s.isRequired ? ' *' : ''}
                     </span>
                   ))}
@@ -199,7 +262,7 @@ export default function RecruiterJobDetailPage() {
           <div className="bg-white rounded-2xl border border-gray-200 p-6">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
-                <SparklesIcon className="h-5 w-5 text-blue-600" />
+                <SparklesIcon className="h-5 w-5 text-[#0d7a5f]" />
                 <h2 className="font-semibold text-gray-900">Tiêu chí chấm điểm AI</h2>
               </div>
               {criteria && !editingCriteria && (
@@ -227,9 +290,9 @@ export default function RecruiterJobDetailPage() {
             ) : (
               <div className="flex flex-col gap-4">
                 {!criteria && (
-                  <div className="flex items-start gap-3 rounded-xl bg-blue-50 p-4">
-                    <AlertCircleIcon className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
-                    <p className="text-sm text-blue-800">Thiết lập tiêu chí để AI tự động chấm điểm và lọc ứng viên phù hợp</p>
+                  <div className="flex items-start gap-3 rounded-xl bg-[#e8f5f0] p-4">
+                    <AlertCircleIcon className="h-5 w-5 text-[#0d7a5f] flex-shrink-0 mt-0.5" />
+                    <p className="text-sm text-[#0a5c47]">Thiết lập tiêu chí để AI tự động chấm điểm và lọc ứng viên phù hợp</p>
                   </div>
                 )}
 
@@ -332,7 +395,7 @@ function InfoPair({ label, value }: { label: string; value: string }) {
 function WeightCard({ label, value }: { label: string; value: number }) {
   return (
     <div className="rounded-xl bg-gray-50 p-3 text-center">
-      <p className="text-2xl font-bold text-blue-600">{value}%</p>
+      <p className="text-2xl font-bold text-[#0d7a5f]">{value}%</p>
       <p className="text-xs text-gray-500 mt-0.5">{label}</p>
     </div>
   );

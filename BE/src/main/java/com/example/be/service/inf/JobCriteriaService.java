@@ -7,7 +7,6 @@ import java.util.UUID;
 
 public interface JobCriteriaService {
     JobCriteriaResponse createOrUpdate(UUID id, JobCriteriaRequest request,UUID recruiterID );
-    JobCriteriaResponse getByJobId(UUID jobId);
-
+    JobCriteriaResponse getByJobId(UUID jobId, UUID recruiterId);
 }
 

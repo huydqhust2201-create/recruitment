@@ -1,6 +1,8 @@
+export type UserRole = 'CANDIDATE' | 'RECRUITER' | 'ADMIN';
+
 export interface User {
   email: string;
-  role: 'CANDIDATE' | 'RECRUITER';
+  role: UserRole;
   fullName: string;
   accessToken: string;
   refreshToken: string;
@@ -10,7 +12,7 @@ export interface AuthResponse {
   accessToken: string;
   refreshToken: string;
   email: string;
-  role: 'CANDIDATE' | 'RECRUITER';
+  role: UserRole;
   fullName: string;
 }
 
@@ -72,7 +74,7 @@ export interface CvFile {
 }
 
 export interface Company {
-  id: number;
+  id: string;
   name: string;
   slug: string;
   logoUrl?: string;
@@ -94,7 +96,7 @@ export interface JobSkill {
 }
 
 export interface Job {
-  id: number;
+  id: string;  // UUID từ BE
   title: string;
   slug: string;
   description: string;
@@ -113,10 +115,11 @@ export interface Job {
   deadline?: string;
   publishedAt?: string;
   createdAt: string;
-  companyId: number;
+  companyId: string;
   companyName: string;
   companyLogo?: string;
   skills: JobSkill[];
+  similarityScore?: number;
 }
 
 export type JobType = 'FULL_TIME' | 'PART_TIME' | 'REMOTE' | 'HYBRID' | 'INTERNSHIP';
@@ -124,8 +127,8 @@ export type JobLevel = 'INTERN' | 'JUNIOR' | 'MID' | 'SENIOR' | 'LEAD' | 'MANAGE
 export type JobStatus = 'DRAFT' | 'ACTIVE' | 'PAUSED' | 'CLOSED';
 
 export interface JobCriteria {
-  id: number;
-  jobId: number;
+  id: string;
+  jobId: string;
   jobTitle: string;
   skillWeight: number;
   experienceWeight: number;
@@ -145,4 +148,150 @@ export interface PageResponse<T> {
 export interface ApiError {
   message: string;
   status?: number;
+}
+
+export type ApplicationStatus =
+  | 'SUBMITTED'
+  | 'REVIEWING'
+  | 'SHORTLISTED'
+  | 'INTERVIEWING'
+  | 'OFFERED'
+  | 'REJECTED'
+  | 'WITHDRAWN';
+
+export interface Application {
+  id: string;
+  jobId: string;
+  jobTitle: string;
+  companyName: string;
+  candidateId: string;
+  candidateFullName: string;
+  candidateEmail: string;
+  candidateHeadline?: string;
+  candidateCurrentPosition?: string;
+  candidateYearsExp?: number;
+  candidateCity?: string;
+  cvFileId: string;
+  cvFileUrl: string;
+  coverLetter?: string;
+  status: ApplicationStatus;
+  aiMatchScore?: number;
+  passedThreshold?: boolean;
+  skillScore?: number;
+  experienceScore?: number;
+  educationScore?: number;
+  appliedAt: string;
+  updatedAt: string;
+}
+
+export interface ApplicationRequest {
+  jobId: string;
+  cvFileId: string;
+  coverLetter?: string;
+}
+
+export interface UpdateApplicationStatusRequest {
+  status: ApplicationStatus;
+  note?: string;
+}
+
+export interface RecommendedJobsResponse {
+  hasCvEmbedding: boolean;
+  jobs: Job[];
+}
+
+export interface AiScore {
+  id: string;
+  applicationId: string;
+  vectorScore?: number;
+  llmScore?: number;
+  skillScore?: number;
+  experienceScore?: number;
+  educationScore?: number;
+  finalScore?: number;
+  strengths?: string;
+  weaknesses?: string;
+  recommendation?: string;
+  matchedSkills?: string[];
+  missingSkills?: string[];
+  improvementSuggestions?: string[];
+  aiModelUsed?: string;
+  tokensUsed?: number;
+  scoredAt?: string;
+}
+
+export interface CoverLetterResponse {
+  content: string;
+  jobTitle: string;
+  companyName: string;
+}
+
+// ── CV Builder ────────────────────────────────────────────
+
+export type CvTemplate = 'MODERN' | 'CLASSIC' | 'CREATIVE';
+
+export interface CvPersonalInfo {
+  fullName: string;
+  email: string;
+  phone: string;
+  address?: string;
+  headline?: string;
+  summary?: string;
+}
+
+export interface CvEducationItem {
+  school: string;
+  degree: string;
+  major: string;
+  startDate?: string;
+  endDate?: string;
+  description?: string;
+}
+
+export interface CvExperienceItem {
+  company: string;
+  position: string;
+  startDate?: string;
+  endDate?: string;
+  current?: boolean;
+  description?: string;
+}
+
+export interface CvCertificationItem {
+  name: string;
+  issuer?: string;
+  issuedDate?: string;
+}
+
+export interface CvLanguageItem {
+  name: string;
+  level?: string;
+}
+
+export interface CvProjectItem {
+  name: string;
+  description?: string;
+  techStack?: string;
+  link?: string;
+}
+
+export interface CvBuilderContent {
+  personalInfo: CvPersonalInfo;
+  educations: CvEducationItem[];
+  experiences: CvExperienceItem[];
+  skills: string[];
+  certifications: CvCertificationItem[];
+  languages: CvLanguageItem[];
+  projects: CvProjectItem[];
+}
+
+export interface CvBuilderDocument {
+  id: string;
+  title: string;
+  template: CvTemplate;
+  content: CvBuilderContent;
+  exportedCvFileId?: string;
+  exportedCvFileUrl?: string;
+  createdAt: string;
+  updatedAt: string;
 }

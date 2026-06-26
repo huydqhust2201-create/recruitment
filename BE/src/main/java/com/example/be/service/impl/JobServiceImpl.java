@@ -75,10 +75,11 @@ public class JobServiceImpl implements JobService {
         // 5. Gáº¯n skills vÃ o job
         if (request.getSkills() != null) {
             List<JobSkill> jobSkills = request.getSkills().stream()
+                    .filter(s -> s.getSkillName() != null && !s.getSkillName().isBlank())
                     .map(s -> {
-                        Skill skill = skillRepository.findById(s.getSkillId())
-                                .orElseThrow(() -> new RuntimeException(
-                                        "KhÃ´ng tÃ¬m tháº¥y skill: " + s.getSkillId()));
+                        Skill skill = skillRepository.findByNameIgnoreCase(s.getSkillName().trim())
+                                .orElseGet(() -> skillRepository.save(
+                                        Skill.builder().name(s.getSkillName().trim()).build()));
                         return JobSkill.builder()
                                 .job(job)
                                 .skill(skill)
@@ -119,6 +120,7 @@ public class JobServiceImpl implements JobService {
     }
 
     @Override
+    @Transactional
     public JobResponse close(UUID id, UUID recruiterId) {
         Job job = getJobAndValidateOwner(id, recruiterId);
         job.setStatus(JobStatus.CLOSED);
@@ -128,9 +130,44 @@ public class JobServiceImpl implements JobService {
 
     @Override
     @Transactional
+    public JobResponse pause(UUID id, UUID recruiterId) {
+        Job job = getJobAndValidateOwner(id, recruiterId);
+        if (job.getStatus() != JobStatus.ACTIVE) {
+            throw new RuntimeException("Chi co the tam dung tin dang active");
+        }
+        job.setStatus(JobStatus.PAUSED);
+        jobRepository.save(job);
+        return mapToResponse(job);
+    }
+
+    @Override
+    @Transactional
+    public JobResponse resume(UUID id, UUID recruiterId) {
+        Job job = getJobAndValidateOwner(id, recruiterId);
+        if (job.getStatus() != JobStatus.PAUSED) {
+            throw new RuntimeException("Chi co the tiep tuc tin dang tam dung");
+        }
+        job.setStatus(JobStatus.ACTIVE);
+        jobRepository.save(job);
+        return mapToResponse(job);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public JobResponse getMyJobById(UUID id, UUID recruiterId) {
+        Job job = jobRepository.findByIdWithSkills(id)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy job"));
+        if (!job.getRecruiter().getId().equals(recruiterId)) {
+            throw new RuntimeException("Bạn không có quyền xem job này");
+        }
+        return mapToResponse(job);
+    }
+
+    @Override
+    @Transactional
     public JobResponse getById(UUID id) {
         Job job = jobRepository.findByIdWithSkills(id)
-                .orElseThrow(() -> new RuntimeException("KhÃ´ng tÃ¬m tháº¥y job"));
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy job"));
 
         job.setViewCount(job.getViewCount() + 1);
         jobRepository.save(job);
@@ -147,19 +184,22 @@ public class JobServiceImpl implements JobService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Page<JobResponse> search(String keyword, String city,
-                                    JobLevel level, Pageable pageable) {
+                                    JobLevel level, String industry, Pageable pageable) {
 
-        keyword = (keyword == null) ? "" : keyword.trim();
-        city = (city == null) ? "" : city.trim();
+        keyword  = (keyword  == null) ? "" : keyword.trim();
+        city     = (city     == null) ? "" : city.trim();
+        industry = (industry == null) ? "" : industry.trim();
 
-        return jobRepository.search(keyword, city, level, pageable)
+        return jobRepository.search(keyword, city, level, industry, pageable)
                 .map(this::mapToResponse);
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<JobResponse> getMyJobs(UUID recruiterId) {
-        return jobRepository.findByRecruiterId(recruiterId)
+        return jobRepository.findByRecruiterIdWithSkills(recruiterId)
                 .stream().map(this::mapToResponse)
                 .collect(Collectors.toList());
     }
@@ -167,7 +207,11 @@ public class JobServiceImpl implements JobService {
     @Override
     @Transactional
     public JobResponse update(UUID id, JobRequest request, UUID recruiterId) {
-        Job job = getJobAndValidateOwner(id, recruiterId);
+        Job job = jobRepository.findByIdWithSkills(id)
+                .orElseThrow(() -> new RuntimeException("Khong tim thay job"));
+        if (!job.getRecruiter().getId().equals(recruiterId)) {
+            throw new RuntimeException("Ban khong co quyen chinh sua job nay");
+        }
 
         job.setTitle(request.getTitle());
         job.setDescription(request.getDescription());
@@ -175,10 +219,31 @@ public class JobServiceImpl implements JobService {
         job.setBenefits(request.getBenefits());
         job.setJobType(request.getJobType());
         job.setLevel(request.getLevel());
+        job.setIndustry(request.getIndustry());
         job.setCity(request.getCity());
         job.setSalaryMin(request.getSalaryMin());
         job.setSalaryMax(request.getSalaryMax());
+        job.setSalaryPublic(request.isSalaryPublic());
         job.setDeadline(request.getDeadline());
+
+        job.getJobSkills().clear();
+        if (request.getSkills() != null) {
+            List<JobSkill> jobSkills = request.getSkills().stream()
+                    .filter(s -> s.getSkillName() != null && !s.getSkillName().isBlank())
+                    .map(s -> {
+                        Skill skill = skillRepository.findByNameIgnoreCase(s.getSkillName().trim())
+                                .orElseGet(() -> skillRepository.save(
+                                        Skill.builder().name(s.getSkillName().trim()).build()));
+                        return JobSkill.builder()
+                                .job(job)
+                                .skill(skill)
+                                .isRequired(s.isRequired())
+                                .level(s.getLevel())
+                                .build();
+                    })
+                    .collect(Collectors.toList());
+            job.getJobSkills().addAll(jobSkills);
+        }
 
         jobRepository.save(job);
         return mapToResponse(job);

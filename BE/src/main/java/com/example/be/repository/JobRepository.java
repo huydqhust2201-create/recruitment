@@ -24,21 +24,33 @@ public interface JobRepository extends JpaRepository<Job, UUID> {
     // Láº¥y táº¥t cáº£ job Ä‘ang active â€” á»©ng viÃªn xem
     Page<Job> findByStatus(JobStatus status, Pageable pageable);
 
-    // HR xem job cá»§a mÃ¬nh
+    // HR xem job của mình
     List<Job> findByRecruiterId(UUID recruiterId);
 
-    // TÃ¬m kiáº¿m theo title + city + level
+    List<Job> findByCompanyIdAndStatus(UUID companyId, JobStatus status);
+
+    @Query("""
+    SELECT DISTINCT j FROM Job j
+    LEFT JOIN FETCH j.jobSkills js
+    LEFT JOIN FETCH js.skill
+    WHERE j.recruiter.id = :recruiterId
+""")
+    List<Job> findByRecruiterIdWithSkills(@Param("recruiterId") UUID recruiterId);
+
+    // Tìm kiếm theo title + city + level + industry
     @Query("""
         SELECT j FROM Job j
         WHERE j.status = 'ACTIVE'
         AND (:keyword = '' OR LOWER(j.title) LIKE LOWER(CONCAT('%', :keyword, '%')))
         AND (:city = '' OR LOWER(j.city) LIKE LOWER(CONCAT('%', :city, '%')))
         AND (:level IS NULL OR j.level = :level)
+        AND (:industry = '' OR j.industry = :industry)
     """)
     Page<Job> search(
-            @Param("keyword") String keyword,
-            @Param("city")    String city,
-            @Param("level")   JobLevel level,
+            @Param("keyword")  String keyword,
+            @Param("city")     String city,
+            @Param("level")    JobLevel level,
+            @Param("industry") String industry,
             Pageable pageable
     );
     // fetch cáº£ jobSkills khi fetch jobs
@@ -57,4 +69,17 @@ public interface JobRepository extends JpaRepository<Job, UUID> {
     WHERE j.slug = :slug
 """)
     Optional<Job> findBySlugWithSkills(@Param("slug") String slug);
+
+    @Query(value = """
+            SELECT j.id,
+                   (1 - (j.jd_embedding <=> CAST(:embedding AS vector))) AS similarity_score
+            FROM jobs j
+            WHERE j.status = 'ACTIVE'
+              AND j.jd_embedding IS NOT NULL
+            ORDER BY j.jd_embedding <=> CAST(:embedding AS vector)
+            LIMIT :limit
+            """, nativeQuery = true)
+    List<Object[]> findSimilarJobs(
+            @Param("embedding") String embedding,
+            @Param("limit") int limit);
 }

@@ -37,8 +37,10 @@ public class JobCriteriaController {
     // Xem criteria cá»§a job
     @GetMapping("/{jobId}/criteria")
     public ResponseEntity<JobCriteriaResponse> getByJobId(
-            @PathVariable UUID jobId) {
-        return ResponseEntity.ok(jobCriteriaService.getByJobId(jobId));
+            @PathVariable UUID jobId,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        UUID recruiterId = getUserId(userDetails);
+        return ResponseEntity.ok(jobCriteriaService.getByJobId(jobId, recruiterId));
     }
 
     private UUID getUserId(UserDetails userDetails) {

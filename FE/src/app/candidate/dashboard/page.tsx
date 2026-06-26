@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import axiosInstance from '@/lib/axios';
 import type { CandidateProfile } from '@/types';
-import { SparklesIcon, FileTextIcon, BriefcaseIcon, ClipboardListIcon, ArrowRightIcon, UserIcon } from 'lucide-react';
+import { SparklesIcon, FileTextIcon, BriefcaseIcon, ClipboardListIcon, ArrowRightIcon, UserIcon, PenSquareIcon } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 export default function CandidateDashboard() {
@@ -54,10 +54,10 @@ export default function CandidateDashboard() {
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <QuickCard
           href="/candidate/profile"
-          icon={<UserIcon className="h-6 w-6 text-blue-600" />}
+          icon={<UserIcon className="h-6 w-6 text-[#0d7a5f]" />}
           title="Cập nhật hồ sơ"
           desc="Điền đầy đủ thông tin để tăng cơ hội được nhà tuyển dụng chú ý"
-          color="bg-blue-50"
+          color="bg-[#e8f5f0]"
         />
         <QuickCard
           href="/candidate/cv"
@@ -65,6 +65,13 @@ export default function CandidateDashboard() {
           title="Quản lý CV"
           desc="Upload CV để AI phân tích và đề xuất việc làm phù hợp"
           color="bg-green-50"
+        />
+        <QuickCard
+          href="/candidate/cv-builder"
+          icon={<PenSquareIcon className="h-6 w-6 text-teal-600" />}
+          title="Tạo CV online"
+          desc="Dùng CV Builder để tạo CV đẹp với nhiều mẫu, xuất PDF ngay lập tức"
+          color="bg-teal-50"
         />
         <QuickCard
           href="/candidate/jobs"
@@ -107,10 +114,10 @@ function QuickCard({ href, icon, title, desc, color }: {
         <div className={`inline-flex rounded-xl ${color} p-2.5 mb-3`}>{icon}</div>
         <div className="flex items-start justify-between">
           <div>
-            <h3 className="font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">{title}</h3>
+            <h3 className="font-semibold text-gray-900 group-hover:text-[#0d7a5f] transition-colors">{title}</h3>
             <p className="text-sm text-gray-500 mt-1 leading-relaxed">{desc}</p>
           </div>
-          <ArrowRightIcon className="h-4 w-4 text-gray-400 flex-shrink-0 mt-0.5 group-hover:text-blue-600 transition-colors" />
+          <ArrowRightIcon className="h-4 w-4 text-gray-400 flex-shrink-0 mt-0.5 group-hover:text-[#0d7a5f] transition-colors" />
         </div>
       </div>
     </Link>
@@ -119,9 +126,9 @@ function QuickCard({ href, icon, title, desc, color }: {
 
 function Tip({ text, href }: { text: string; href: string }) {
   return (
-    <Link href={href} className="flex items-center justify-between rounded-lg bg-gray-50 px-4 py-2.5 hover:bg-blue-50 transition-colors group">
+    <Link href={href} className="flex items-center justify-between rounded-lg bg-gray-50 px-4 py-2.5 hover:bg-[#e8f5f0] transition-colors group">
       <span className="text-sm text-gray-700">{text}</span>
-      <ArrowRightIcon className="h-4 w-4 text-gray-400 group-hover:text-blue-600 transition-colors" />
+      <ArrowRightIcon className="h-4 w-4 text-gray-400 group-hover:text-[#0d7a5f] transition-colors" />
     </Link>
   );
 }

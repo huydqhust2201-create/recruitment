@@ -72,11 +72,18 @@ public class JobCriteriaServiceImpl implements JobCriteriaService {
     }
 
     @Override
-    public JobCriteriaResponse getByJobId(UUID jobId) {
+    public JobCriteriaResponse getByJobId(UUID jobId, UUID recruiterId) {
+        Job job = jobRepository.findById(jobId)
+                .orElseThrow(() -> new RuntimeException("Khong tim thay job"));
+
+        if (!job.getRecruiter().getId().equals(recruiterId)) {
+            throw new RuntimeException("Ban khong co quyen xem tieu chi job nay");
+        }
+
         JobCriteria criteria = jobCriteriaRepository
                 .findByJobId(jobId)
                 .orElseThrow(() -> new RuntimeException(
-                        "Job nÃ y chÆ°a cÃ³ tiÃªu chuáº©n cháº¥m Ä‘iá»ƒm"));
+                        "Job nay chua co tieu chuan cham diem"));
         return mapToResponse(criteria);
     }
 

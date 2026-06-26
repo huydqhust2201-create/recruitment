@@ -57,7 +57,6 @@ interface JobFormData {
 export default function CreateJobPage() {
   const router = useRouter();
   const [saving, setSaving] = useState(false);
-  const [publishAfter, setPublishAfter] = useState(false);
   const [skillInput, setSkillInput] = useState({ name: '', isRequired: true, level: '' });
   const [skills, setSkills] = useState<SkillInput[]>([]);
   const [skillIdCounter, setSkillIdCounter] = useState(1);
@@ -104,7 +103,7 @@ export default function CreateJobPage() {
     setSkills((prev) => prev.filter((s) => s.skillId !== id));
   };
 
-  const handleSubmit = async (publish: boolean) => {
+  const handleSubmit = async () => {
     if (!validate()) return;
     setSaving(true);
     try {
@@ -121,18 +120,13 @@ export default function CreateJobPage() {
         salaryMax: form.salaryMax ? Number(form.salaryMax) : undefined,
         isSalaryPublic: form.isSalaryPublic,
         deadline: form.deadline || undefined,
-        skills: skills.map((s) => ({ skillId: s.skillId, isRequired: s.isRequired, level: s.level || undefined })),
+        skills: skills.map((s) => ({ skillName: s.skillName, isRequired: s.isRequired, level: s.level || undefined })),
       };
 
-      const res = await axiosInstance.post<{ id: number }>('/api/recruiter/jobs', payload);
+      // BE trả về id dạng UUID (string)
+      const res = await axiosInstance.post<{ id: string }>('/api/recruiter/jobs', payload);
       const jobId = res.data.id;
-
-      if (publish) {
-        await axiosInstance.put(`/api/recruiter/jobs/${jobId}/publish`);
-        toast.success('Đăng tin thành công!');
-      } else {
-        toast.success('Lưu nháp thành công!');
-      }
+      toast.success('Tạo job thành công! Hãy thiết lập tiêu chí AI rồi đăng tin.');
       router.push(`/recruiter/jobs/${jobId}`);
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : 'Tạo job thất bại');
@@ -216,7 +210,7 @@ export default function CreateJobPage() {
             type="checkbox"
             checked={form.isSalaryPublic}
             onChange={(e) => setForm({ ...form, isSalaryPublic: e.target.checked })}
-            className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+            className="rounded border-gray-300 text-[#0d7a5f] focus:ring-[#0d7a5f]"
           />
           <span className="text-sm text-gray-700">Hiển thị mức lương công khai</span>
         </label>
@@ -260,14 +254,14 @@ export default function CreateJobPage() {
             value={skillInput.name}
             onChange={(e) => setSkillInput({ ...skillInput, name: e.target.value })}
             onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addSkill())}
-            className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[#b2dfcf] focus:outline-none focus:ring-1 focus:ring-[#0d7a5f]"
           />
           <label className="flex items-center gap-1.5 text-sm text-gray-600 cursor-pointer">
             <input
               type="checkbox"
               checked={skillInput.isRequired}
               onChange={(e) => setSkillInput({ ...skillInput, isRequired: e.target.checked })}
-              className="rounded border-gray-300 text-blue-600"
+              className="rounded border-gray-300 text-[#0d7a5f]"
             />
             Bắt buộc
           </label>
@@ -281,7 +275,7 @@ export default function CreateJobPage() {
               <span
                 key={s.skillId}
                 className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-sm font-medium ${
-                  s.isRequired ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600'
+                  s.isRequired ? 'bg-[#e8f5f0] text-[#0d7a5f]' : 'bg-gray-100 text-gray-600'
                 }`}
               >
                 {s.skillName}
@@ -296,16 +290,22 @@ export default function CreateJobPage() {
         <p className="text-xs text-gray-400 mt-2">* = Kỹ năng bắt buộc</p>
       </FormSection>
 
+      {/* Lưu ý flow */}
+      <div className="flex items-start gap-3 rounded-xl bg-[#e8f5f0] border border-[#b2dfcf] p-4">
+        <span className="text-[#0d7a5f] text-lg flex-shrink-0">ℹ️</span>
+        <p className="text-sm text-[#0a5c47]">
+          Sau khi tạo job, bạn sẽ được chuyển sang trang chi tiết để <strong>thiết lập tiêu chí AI</strong>.
+          Hệ thống yêu cầu có tiêu chí trước khi đăng tin công khai.
+        </p>
+      </div>
+
       {/* Actions */}
       <div className="flex flex-col sm:flex-row justify-end gap-3 pb-4">
-        <Button variant="outline" onClick={() => handleSubmit(false)} loading={saving && !publishAfter}>
-          Lưu nháp
+        <Button variant="outline" onClick={() => router.back()} disabled={saving}>
+          Hủy
         </Button>
-        <Button
-          onClick={() => { setPublishAfter(true); handleSubmit(true); }}
-          loading={saving && publishAfter}
-        >
-          Đăng tin ngay
+        <Button onClick={handleSubmit} loading={saving}>
+          Tạo job &amp; Thiết lập tiêu chí →
         </Button>
       </div>
     </div>

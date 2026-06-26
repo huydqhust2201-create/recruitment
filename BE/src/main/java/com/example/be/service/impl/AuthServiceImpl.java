@@ -96,4 +96,36 @@ public class AuthServiceImpl implements AuthService {
                 .fullName(user.getFullName())
                 .build();
     }
+
+    @Override
+    public AuthResponse refresh(String refreshToken) {
+        if (!jwtService.isRefreshToken(refreshToken)) {
+            throw new RuntimeException("Refresh token không hợp lệ");
+        }
+
+        String email = jwtService.extractEmail(refreshToken);
+        UserDetails userDetails = userDetailsService.loadUserByUsername(email);
+
+        if (!jwtService.isTokenValid(refreshToken, userDetails)) {
+            throw new RuntimeException("Refresh token đã hết hạn hoặc không hợp lệ");
+        }
+
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User không tồn tại"));
+
+        if (!user.isActive()) {
+            throw new RuntimeException("Tài khoản đã bị vô hiệu hóa");
+        }
+
+        String newAccessToken = jwtService.generateAccessToken(userDetails);
+        String newRefreshToken = jwtService.generateRefreshToken(userDetails);
+
+        return AuthResponse.builder()
+                .accessToken(newAccessToken)
+                .refreshToken(newRefreshToken)
+                .email(user.getEmail())
+                .role(user.getRole().name())
+                .fullName(user.getFullName())
+                .build();
+    }
 }

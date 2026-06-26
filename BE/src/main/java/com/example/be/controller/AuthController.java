@@ -1,6 +1,7 @@
 package com.example.be.controller;
 
 import com.example.be.dto.request.LoginRequest;
+import com.example.be.dto.request.RefreshTokenRequest;
 import com.example.be.dto.request.RegisterRequest;
 import com.example.be.dto.response.AuthResponse;
 import com.example.be.service.inf.AuthService;
@@ -26,5 +27,11 @@ public class AuthController {
     public ResponseEntity<AuthResponse> login(
             @Valid @RequestBody LoginRequest request) {
         return ResponseEntity.ok(authService.login(request));
+    }
+
+    @PostMapping("/refresh")
+    public ResponseEntity<AuthResponse> refresh(
+            @Valid @RequestBody RefreshTokenRequest request) {
+        return ResponseEntity.ok(authService.refresh(request.getRefreshToken()));
     }
 }

@@ -12,13 +12,14 @@ import java.util.UUID;
 public interface JobService  {
     JobResponse create(JobRequest request, UUID recruitmentID);
     JobResponse getById(UUID id);
+    JobResponse getMyJobById(UUID id, UUID recruiterId);
     JobResponse getBySlug(String slug);
-    Page<JobResponse> search(String keyword, String city, JobLevel level, Pageable pageable);
+    Page<JobResponse> search(String keyword, String city, JobLevel level, String industry, Pageable pageable);
     List<JobResponse> getMyJobs(UUID recruitmentID);
     JobResponse update(UUID id,JobRequest request, UUID recruitmentID);
     JobResponse publish(UUID id, UUID recruitmentUD);
     JobResponse close(UUID id, UUID recruitmentID);
-
-
+    JobResponse pause(UUID id, UUID recruiterId);
+    JobResponse resume(UUID id, UUID recruiterId);
 }
 

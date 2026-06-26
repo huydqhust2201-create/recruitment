@@ -72,10 +72,10 @@ public class Job {
     private String city;
 
     @Column(name = "salary_min")
-    private Integer salaryMin;
+    private Long salaryMin;
 
     @Column(name = "salary_max")
-    private Integer salaryMax;
+    private Long salaryMax;
 
     @Column(length = 10)
     private String currency = "VND";

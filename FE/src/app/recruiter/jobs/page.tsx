@@ -3,13 +3,10 @@
 import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
 import axiosInstance from '@/lib/axios';
-import type { Job, PageResponse } from '@/types';
+import type { Job } from '@/types';
 import Button from '@/components/ui/Button';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
-import {
-  PlusIcon, EyeIcon, UsersIcon, PencilIcon,
-  BriefcaseIcon, ChevronLeftIcon, ChevronRightIcon,
-} from 'lucide-react';
+import { PlusIcon, EyeIcon, UsersIcon, PencilIcon, BriefcaseIcon } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { formatDate, JOB_LEVEL_LABELS, JOB_TYPE_LABELS } from '@/lib/utils';
 
@@ -25,51 +22,88 @@ const STATUS_LABELS: Record<string, string> = {
 
 export default function RecruiterJobsPage() {
   const [jobs, setJobs] = useState<Job[]>([]);
-  const [total, setTotal] = useState(0);
-  const [totalPages, setTotalPages] = useState(0);
-  const [page, setPage] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [publishingId, setPublishingId] = useState<number | null>(null);
+  const [closingId, setClosingId] = useState<string | null>(null);
+  const [publishingId, setPublishingId] = useState<string | null>(null);
+  const [pausingId, setPausingId] = useState<string | null>(null);
+  const [resumingId, setResumingId] = useState<string | null>(null);
 
   const fetchJobs = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await axiosInstance.get<PageResponse<Job>>('/api/recruiter/jobs', {
-        params: { page, size: 10 },
-      });
-      setJobs(res.data.content);
-      setTotal(res.data.totalElements);
-      setTotalPages(res.data.totalPages);
+      // BE trả về List<JobResponse>, không phải Page
+      const res = await axiosInstance.get<Job[]>('/api/recruiter/jobs');
+      setJobs(res.data);
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : 'Không thể tải danh sách job');
     } finally {
       setLoading(false);
     }
-  }, [page]);
+  }, []);
 
   useEffect(() => { fetchJobs(); }, [fetchJobs]);
 
-  const handlePublish = async (id: number) => {
+  useEffect(() => {
+    const handleFocus = () => fetchJobs();
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
+  }, [fetchJobs]);
+
+  const handlePublish = async (id: string) => {
     setPublishingId(id);
     try {
       await axiosInstance.put(`/api/recruiter/jobs/${id}/publish`);
       toast.success('Đăng tin thành công!');
       fetchJobs();
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Đăng tin thất bại');
+      const msg = err instanceof Error ? err.message : 'Đăng tin thất bại';
+      if (msg.includes('tiêu')) {
+        toast.error('Cần thiết lập tiêu chí AI trước khi đăng tin. Vào Chi tiết → Thiết lập tiêu chí.');
+      } else {
+        toast.error(msg);
+      }
     } finally {
       setPublishingId(null);
     }
   };
 
-  const handleClose = async (id: number) => {
+  const handleClose = async (id: string) => {
     if (!confirm('Đóng tin tuyển dụng này?')) return;
+    setClosingId(id);
     try {
       await axiosInstance.put(`/api/recruiter/jobs/${id}/close`);
       toast.success('Đã đóng tin');
       fetchJobs();
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : 'Thao tác thất bại');
+    } finally {
+      setClosingId(null);
+    }
+  };
+
+  const handlePause = async (id: string) => {
+    setPausingId(id);
+    try {
+      await axiosInstance.put(`/api/recruiter/jobs/${id}/pause`);
+      toast.success('Đã tạm dừng tin');
+      fetchJobs();
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'Thao tác thất bại');
+    } finally {
+      setPausingId(null);
+    }
+  };
+
+  const handleResume = async (id: string) => {
+    setResumingId(id);
+    try {
+      await axiosInstance.put(`/api/recruiter/jobs/${id}/resume`);
+      toast.success('Đã tiếp tục đăng tin');
+      fetchJobs();
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'Thao tác thất bại');
+    } finally {
+      setResumingId(null);
     }
   };
 
@@ -79,7 +113,7 @@ export default function RecruiterJobsPage() {
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Tin tuyển dụng</h1>
           <p className="text-sm text-gray-500 mt-1">
-            {loading ? 'Đang tải...' : `${total} tin tuyển dụng`}
+            {loading ? 'Đang tải...' : `${jobs.length} tin tuyển dụng`}
           </p>
         </div>
         <Link href="/recruiter/jobs/create">
@@ -88,6 +122,16 @@ export default function RecruiterJobsPage() {
           </Button>
         </Link>
       </div>
+
+      {/* Hướng dẫn đăng tin */}
+      {!loading && jobs.some((j) => j.status === 'DRAFT') && (
+        <div className="flex items-start gap-3 rounded-xl bg-[#e8f5f0] border border-[#b2dfcf] p-4">
+          <PencilIcon className="h-5 w-5 text-[#0d7a5f] shrink-0 mt-0.5" />
+          <p className="text-sm text-[#0a5c47]">
+            Tin ở trạng thái <strong>Nháp</strong> cần vào <strong>Chi tiết → Thiết lập tiêu chí AI</strong> trước, sau đó mới có thể đăng tin.
+          </p>
+        </div>
+      )}
 
       {loading ? (
         <div className="flex justify-center py-20">
@@ -104,11 +148,11 @@ export default function RecruiterJobsPage() {
       ) : (
         <div className="flex flex-col gap-3">
           {jobs.map((job) => (
-            <div key={job.id} className="bg-white rounded-2xl border border-gray-200 p-5 hover:border-blue-200 transition-all">
+            <div key={job.id} className="bg-white rounded-2xl border border-gray-200 p-5 hover:border-[#b2dfcf] transition-all">
               <div className="flex items-start justify-between gap-4">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <Link href={`/recruiter/jobs/${job.id}`} className="font-semibold text-gray-900 hover:text-blue-600 transition-colors">
+                    <Link href={`/recruiter/jobs/${job.id}`} className="font-semibold text-gray-900 hover:text-[#0d7a5f] transition-colors">
                       {job.title}
                     </Link>
                     <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${STATUS_STYLES[job.status] ?? 'bg-gray-100 text-gray-600'}`}>
@@ -123,7 +167,6 @@ export default function RecruiterJobsPage() {
                     <span>Đăng: {formatDate(job.createdAt)}</span>
                   </div>
                 </div>
-
                 <div className="flex items-center gap-4 text-sm text-gray-500 flex-shrink-0">
                   <span className="flex items-center gap-1"><EyeIcon className="h-4 w-4" /> {job.viewCount}</span>
                   <span className="flex items-center gap-1"><UsersIcon className="h-4 w-4" /> {job.applyCount}</span>
@@ -142,53 +185,33 @@ export default function RecruiterJobsPage() {
                   </Button>
                 </Link>
                 {job.status === 'DRAFT' && (
-                  <Button
-                    size="sm"
-                    loading={publishingId === job.id}
-                    onClick={() => handlePublish(job.id)}
-                  >
+                  <Button size="sm" loading={publishingId === job.id} onClick={() => handlePublish(job.id)}>
                     Đăng tin
                   </Button>
                 )}
                 {job.status === 'ACTIVE' && (
-                  <Button variant="danger" size="sm" onClick={() => handleClose(job.id)}>
-                    Đóng tin
-                  </Button>
+                  <>
+                    <Button variant="outline" size="sm" loading={pausingId === job.id} onClick={() => handlePause(job.id)}>
+                      Tạm dừng
+                    </Button>
+                    <Button variant="danger" size="sm" loading={closingId === job.id} onClick={() => handleClose(job.id)}>
+                      Đóng tin
+                    </Button>
+                  </>
+                )}
+                {job.status === 'PAUSED' && (
+                  <>
+                    <Button size="sm" loading={resumingId === job.id} onClick={() => handleResume(job.id)}>
+                      Tiếp tục
+                    </Button>
+                    <Button variant="danger" size="sm" loading={closingId === job.id} onClick={() => handleClose(job.id)}>
+                      Đóng tin
+                    </Button>
+                  </>
                 )}
               </div>
             </div>
           ))}
-        </div>
-      )}
-
-      {totalPages > 1 && (
-        <div className="flex items-center justify-center gap-2 mt-4">
-          <button
-            onClick={() => setPage((p) => Math.max(0, p - 1))}
-            disabled={page === 0}
-            className="p-2 rounded-lg border border-gray-300 disabled:opacity-40 hover:bg-gray-50 transition-colors"
-          >
-            <ChevronLeftIcon className="h-4 w-4" />
-          </button>
-          {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-            const p = Math.max(0, Math.min(page - 2, totalPages - 5)) + i;
-            return (
-              <button
-                key={p}
-                onClick={() => setPage(p)}
-                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${p === page ? 'bg-blue-600 text-white' : 'border border-gray-300 hover:bg-gray-50'}`}
-              >
-                {p + 1}
-              </button>
-            );
-          })}
-          <button
-            onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
-            disabled={page >= totalPages - 1}
-            className="p-2 rounded-lg border border-gray-300 disabled:opacity-40 hover:bg-gray-50 transition-colors"
-          >
-            <ChevronRightIcon className="h-4 w-4" />
-          </button>
         </div>
       )}
     </div>

@@ -41,8 +41,22 @@ public class JwtService {
     }
 
     // â”€â”€ Táº¡o refresh token â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    private static final String TOKEN_TYPE_CLAIM = "tokenType";
+    private static final String REFRESH_TOKEN_TYPE = "refresh";
+
     public String generateRefreshToken(UserDetails userDetails) {
-        return buildToken(new HashMap<>(), userDetails.getUsername(), refreshExpiration);
+        Map<String, Object> claims = new HashMap<>();
+        claims.put(TOKEN_TYPE_CLAIM, REFRESH_TOKEN_TYPE);
+        return buildToken(claims, userDetails.getUsername(), refreshExpiration);
+    }
+
+    public boolean isRefreshToken(String token) {
+        try {
+            String tokenType = extractClaim(token, claims -> claims.get(TOKEN_TYPE_CLAIM, String.class));
+            return REFRESH_TOKEN_TYPE.equals(tokenType);
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     // â”€â”€ Kiá»ƒm tra token cÃ²n há»£p lá»‡ khÃ´ng â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€

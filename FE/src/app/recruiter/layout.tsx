@@ -7,12 +7,14 @@ import { PageLoader } from '@/components/ui/LoadingSpinner';
 import Navbar from '@/components/layout/Navbar';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
-import { LayoutDashboardIcon, BuildingIcon, BriefcaseIcon, PlusIcon } from 'lucide-react';
+import { LayoutDashboardIcon, BuildingIcon, BriefcaseIcon, PlusIcon, UsersIcon, CreditCardIcon } from 'lucide-react';
 
 const NAV = [
   { href: '/recruiter/dashboard', label: 'Dashboard', icon: LayoutDashboardIcon },
   { href: '/recruiter/company', label: 'Thông tin công ty', icon: BuildingIcon },
   { href: '/recruiter/jobs', label: 'Tin tuyển dụng', icon: BriefcaseIcon },
+  { href: '/recruiter/candidates', label: 'Hồ sơ ứng viên', icon: UsersIcon },
+  { href: '/recruiter/subscription', label: 'Gói dịch vụ', icon: CreditCardIcon },
   { href: '/recruiter/jobs/create', label: 'Đăng tin mới', icon: PlusIcon },
 ];
 
@@ -36,7 +38,7 @@ export default function RecruiterLayout({ children }: { children: React.ReactNod
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex flex-col lg:flex-row gap-6">
           {/* Sidebar */}
-          <aside className="w-full lg:w-56 flex-shrink-0">
+          <aside className="w-full lg:w-56 shrink-0">
             <nav className="bg-white rounded-2xl border border-gray-200 p-3 lg:sticky lg:top-24">
               <div className="px-3 py-2 mb-2">
                 <p className="text-xs font-semibold uppercase tracking-wider text-gray-400">Nhà tuyển dụng</p>
@@ -54,12 +56,12 @@ export default function RecruiterLayout({ children }: { children: React.ReactNod
                     className={cn(
                       'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors',
                       isActive
-                        ? 'bg-blue-50 text-blue-700'
+                        ? 'bg-[#e8f5f0] text-[#0d7a5f]'
                         : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900',
                       href === '/recruiter/jobs/create' && 'mt-2 border border-dashed border-gray-300'
                     )}
                   >
-                    <Icon className="h-4 w-4 flex-shrink-0" />
+                    <Icon className="h-4 w-4 shrink-0" />
                     {label}
                   </Link>
                 );

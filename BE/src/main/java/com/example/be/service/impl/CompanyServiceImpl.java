@@ -26,15 +26,15 @@ public class CompanyServiceImpl implements CompanyService {
     @Override
     public CompanyResponse create(CompanyRequest request, UUID userId) {
 
-        // 1. Kiá»ƒm tra tÃªn cÃ´ng ty Ä‘Ã£ tá»“n táº¡i chÆ°a
+        // 1. Kiem tra ten cong ty da ton tai chua
         if (companyRepository.existsByName(request.getName())) {
-            throw new RuntimeException("TÃªn cÃ´ng ty Ä‘Ã£ tá»“n táº¡i");
+            throw new RuntimeException("Ten cong ty da ton tai");
         }
 
-        // 2. Táº¡o slug tá»« tÃªn cÃ´ng ty
+        // 2. Tao slug tu ten cong ty
         String slug = generateSlug(request.getName());
 
-        // 3. Táº¡o company
+        // 3. Tao company
         Company company = Company.builder()
                 .name(request.getName())
                 .slug(slug)
@@ -47,11 +47,11 @@ public class CompanyServiceImpl implements CompanyService {
 
         companyRepository.save(company);
 
-        // 4. Táº¡o recruiter profile cho user vÃ  gáº¯n vÃ o company
+        // 4. Tao recruiter profile cho user va gan vao company
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User khÃ´ng tá»“n táº¡i"));
+                .orElseThrow(() -> new RuntimeException("User khong ton tai"));
 
-        // Náº¿u chÆ°a cÃ³ profile thÃ¬ táº¡o má»›i
+        // Neu chua co profile thi tao moi
         if (!recruiterProfileRepository.existsByUserId(userId)) {
             RecruiterProfile profile = RecruiterProfile.builder()
                     .user(user)
@@ -66,21 +66,28 @@ public class CompanyServiceImpl implements CompanyService {
     @Override
     public CompanyResponse getById(UUID id) {
         Company company = companyRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("KhÃ´ng tÃ¬m tháº¥y cÃ´ng ty"));
+                .orElseThrow(() -> new RuntimeException("Khong tim thay cong ty"));
         return mapToResponse(company);
     }
 
     @Override
     public CompanyResponse getBySlug(String slug) {
         Company company = companyRepository.findBySlug(slug)
-                .orElseThrow(() -> new RuntimeException("KhÃ´ng tÃ¬m tháº¥y cÃ´ng ty"));
+                .orElseThrow(() -> new RuntimeException("Khong tim thay cong ty"));
         return mapToResponse(company);
     }
 
     @Override
     public CompanyResponse update(UUID id, CompanyRequest request, UUID userId) {
         Company company = companyRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("KhÃ´ng tÃ¬m tháº¥y cÃ´ng ty"));
+                .orElseThrow(() -> new RuntimeException("Khong tim thay cong ty"));
+
+        RecruiterProfile profile = recruiterProfileRepository.findByUserId(userId)
+                .orElseThrow(() -> new RuntimeException("Ban chua co ho so recruiter"));
+
+        if (profile.getCompany() == null || !profile.getCompany().getId().equals(id)) {
+            throw new RuntimeException("Ban khong co quyen cap nhat cong ty nay");
+        }
 
         company.setName(request.getName());
         company.setWebsite(request.getWebsite());
@@ -93,11 +100,11 @@ public class CompanyServiceImpl implements CompanyService {
         return mapToResponse(company);
     }
 
-    // â”€â”€ Helper methods â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // Helper methods
     private String generateSlug(String name) {
         String normalized = Normalizer.normalize(name, Normalizer.Form.NFD)
-                .replaceAll("\\p{InCombiningDiacriticalMarks}+", ""); // xÃ³a dáº¥u trong unicode
-        normalized = normalized.replace("Ä‘", "d").replace("Ä", "D");
+                .replaceAll("\\p{InCombiningDiacriticalMarks}+", "");
+        normalized = normalized.replace("d", "d").replace("D", "D");
         String slug = normalized.toLowerCase()
                 .trim()
                 .replaceAll("[^a-z0-9\\s-]", "")

@@ -21,8 +21,8 @@ public class JobResponse {
     private String level;
     private String industry;
     private String city;
-    private Integer salaryMin;
-    private Integer salaryMax;
+    private Long salaryMin;
+    private Long salaryMax;
     private boolean isSalaryPublic;
     private String status;
     private int viewCount;
@@ -38,6 +38,9 @@ public class JobResponse {
 
     // Danh sÃ¡ch skill
     private List<SkillInfo> skills;
+
+    // AI job matching (optional)
+    private Double similarityScore;
 
     @Data
     @Builder

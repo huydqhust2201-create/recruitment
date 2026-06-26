@@ -3,6 +3,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import axiosInstance from '@/lib/axios';
+import { setAuthRoleCookie, clearAuthRoleCookie } from '@/lib/auth-cookies';
 import type { User, LoginRequest, RegisterRequest, AuthResponse } from '@/types';
 
 interface AuthContextValue {
@@ -29,6 +30,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     if (accessToken && email && role && fullName) {
       setUser({ accessToken, refreshToken: refreshToken ?? '', email, role, fullName });
+      setAuthRoleCookie(role);
     }
     setLoading(false);
   }, []);
@@ -39,31 +41,40 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.setItem('email', data.email);
     localStorage.setItem('role', data.role);
     localStorage.setItem('fullName', data.fullName);
+    setAuthRoleCookie(data.role);
     setUser(data);
+  };
+
+  const redirectAfterAuth = (role: User['role']) => {
+    const redirect = typeof window !== 'undefined'
+      ? new URLSearchParams(window.location.search).get('redirect')
+      : null;
+    if (redirect && redirect.startsWith('/')) {
+      router.push(redirect);
+      return;
+    }
+    router.push(
+      role === 'ADMIN' ? '/admin/dashboard' :
+      role === 'RECRUITER' ? '/recruiter/dashboard' :
+      '/'
+    );
   };
 
   const login = async (body: LoginRequest) => {
     const res = await axiosInstance.post<AuthResponse>('/api/auth/login', body);
     saveUser(res.data);
-    if (res.data.role === 'CANDIDATE') {
-      router.push('/candidate/dashboard');
-    } else {
-      router.push('/recruiter/dashboard');
-    }
+    redirectAfterAuth(res.data.role);
   };
 
   const register = async (body: RegisterRequest) => {
     const res = await axiosInstance.post<AuthResponse>('/api/auth/register', body);
     saveUser(res.data);
-    if (res.data.role === 'CANDIDATE') {
-      router.push('/candidate/dashboard');
-    } else {
-      router.push('/recruiter/dashboard');
-    }
+    redirectAfterAuth(res.data.role);
   };
 
   const logout = () => {
     localStorage.clear();
+    clearAuthRoleCookie();
     setUser(null);
     router.push('/login');
   };

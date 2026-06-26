@@ -1,18 +1,21 @@
 'use client';
 
-import { useState } from 'react';
+import { Suspense, useState } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import Input from '@/components/ui/Input';
 import Button from '@/components/ui/Button';
-import { BriefcaseIcon, EyeIcon, EyeOffIcon } from 'lucide-react';
+import { BriefcaseIcon, EyeIcon, EyeOffIcon, AlertCircleIcon } from 'lucide-react';
 import toast from 'react-hot-toast';
 
-export default function LoginPage() {
+function LoginForm() {
   const { login } = useAuth();
+  const searchParams = useSearchParams();
   const [form, setForm] = useState({ email: '', password: '' });
   const [showPw, setShowPw] = useState(false);
   const [loading, setLoading] = useState(false);
+  const sessionExpired = searchParams.get('reason') === 'session_expired';
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const validate = () => {
@@ -42,13 +45,22 @@ export default function LoginPage() {
     <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <Link href="/" className="inline-flex items-center gap-2 text-blue-600 font-bold text-2xl">
+          <Link href="/" className="inline-flex items-center gap-2 text-[#0d7a5f] font-bold text-2xl">
             <BriefcaseIcon className="h-7 w-7" />
             RecruitAI
           </Link>
           <h1 className="mt-4 text-2xl font-bold text-gray-900">Chào mừng trở lại</h1>
           <p className="mt-1 text-sm text-gray-500">Đăng nhập để tiếp tục</p>
         </div>
+
+        {sessionExpired && (
+          <div className="mb-4 flex items-start gap-3 rounded-xl bg-yellow-50 border border-yellow-200 p-4">
+            <AlertCircleIcon className="h-5 w-5 text-yellow-600 shrink-0 mt-0.5" />
+            <p className="text-sm text-yellow-800">
+              Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.
+            </p>
+          </div>
+        )}
 
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
           <form onSubmit={handleSubmit} className="flex flex-col gap-5">
@@ -75,7 +87,7 @@ export default function LoginPage() {
                   className={`w-full rounded-lg border px-3 py-2 pr-10 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-1 ${
                     errors.password
                       ? 'border-red-500 focus:border-red-500 focus:ring-red-500'
-                      : 'border-gray-300 focus:border-blue-500 focus:ring-blue-500'
+                      : 'border-gray-300 focus:border-[#0d7a5f] focus:ring-[#0d7a5f]'
                   }`}
                 />
                 <button
@@ -96,12 +108,24 @@ export default function LoginPage() {
 
           <p className="mt-6 text-center text-sm text-gray-500">
             Chưa có tài khoản?{' '}
-            <Link href="/register" className="font-medium text-blue-600 hover:text-blue-700">
+            <Link href="/register" className="font-medium text-[#0d7a5f] hover:text-[#0a5c47]">
               Đăng ký ngay
             </Link>
           </p>
         </div>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex min-h-screen items-center justify-center bg-gray-50">
+        <p className="text-sm text-gray-500">Đang tải...</p>
+      </div>
+    }>
+      <LoginForm />
+    </Suspense>
   );
 }

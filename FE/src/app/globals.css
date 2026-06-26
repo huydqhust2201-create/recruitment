@@ -1,8 +1,19 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --brand-primary:  #0d7a5f;
+  --brand-dark:     #0a5c47;
+  --brand-light:    #e8f5f0;
+  --brand-mid:      #b2dfcf;
+  --surface-tinted: #f6faf8;
+  --text-primary:   #111827;
+  --text-secondary: #6b7280;
+  --border-default: #e5e7eb;
+  --accent-hot:     #ef4444;
+  --tag-fulltime-bg:   #d1fae5;
+  --tag-fulltime-text: #065f46;
+  --background: var(--surface-tinted);
+  --foreground: var(--text-primary);
 }
 
 body {

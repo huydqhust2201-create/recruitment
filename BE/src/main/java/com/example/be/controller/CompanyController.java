@@ -11,6 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.http.HttpStatus;
 
 import java.util.UUID;
 
@@ -28,7 +29,8 @@ public class CompanyController {
             @AuthenticationPrincipal UserDetails userDetails) {
 
         UUID userId = getUserId(userDetails);
-        return ResponseEntity.ok(companyService.create(request, userId));
+        CompanyResponse response = companyService.create(request, userId);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     @GetMapping("/{id}")

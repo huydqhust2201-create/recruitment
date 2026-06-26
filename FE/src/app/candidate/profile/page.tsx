@@ -46,6 +46,9 @@ export default function CandidateProfilePage() {
         address: res.data.address ?? '',
         careerGoals: res.data.careerGoals ?? '',
       });
+      // Auto-enable editing for new/empty profiles
+      const isEmpty = !res.data.headline && !res.data.bio && !res.data.currentPosition && !res.data.city;
+      if (isEmpty) setEditing(true);
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : 'Không thể tải hồ sơ');
     } finally {
@@ -78,15 +81,15 @@ export default function CandidateProfilePage() {
       <div className="bg-white rounded-2xl border border-gray-200 p-6">
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-4">
-            <div className="h-16 w-16 rounded-full bg-blue-100 flex items-center justify-center">
-              <UserCircleIcon className="h-10 w-10 text-blue-600" />
+            <div className="h-16 w-16 rounded-full bg-[#e8f5f0] flex items-center justify-center">
+              <UserCircleIcon className="h-10 w-10 text-[#0d7a5f]" />
             </div>
             <div>
               <h1 className="text-xl font-bold text-gray-900">{profile.fullName}</h1>
               <p className="text-sm text-gray-500">{profile.email}</p>
-              {profile.headline && <p className="text-sm text-blue-600 font-medium mt-0.5">{profile.headline}</p>}
+              {profile.headline && <p className="text-sm text-[#0d7a5f] font-medium mt-0.5">{profile.headline}</p>}
               {profile.hasCvEmbedding && (
-                <span className="inline-flex items-center gap-1 rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700 mt-1">
+                <span className="inline-flex items-center gap-1 rounded-full bg-[#e8f5f0] px-2 py-0.5 text-xs font-medium text-[#0d7a5f] mt-1">
                   <SparklesIcon className="h-3 w-3" /> AI Ready
                 </span>
               )}
@@ -103,7 +106,7 @@ export default function CandidateProfilePage() {
                     style={{ width: `${profile.profileCompleteness}%` }}
                   />
                 </div>
-                <span className="text-sm font-bold text-blue-600">{profile.profileCompleteness}%</span>
+                <span className="text-sm font-bold text-[#0d7a5f]">{profile.profileCompleteness}%</span>
               </div>
             </div>
             {!editing ? (
