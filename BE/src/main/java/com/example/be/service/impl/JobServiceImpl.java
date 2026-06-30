@@ -5,6 +5,7 @@ import com.example.be.dto.response.JobResponse;
 import com.example.be.entity.*;
 import com.example.be.entity.enums.JobLevel;
 import com.example.be.entity.enums.JobStatus;
+import com.example.be.entity.enums.JobType;
 import com.example.be.repository.*;
 import com.example.be.service.inf.EmbeddingService;
 import com.example.be.service.inf.JobService;
@@ -186,14 +187,21 @@ public class JobServiceImpl implements JobService {
     @Override
     @Transactional(readOnly = true)
     public Page<JobResponse> search(String keyword, String city,
-                                    JobLevel level, String industry, Pageable pageable) {
+                                    JobLevel level, String industry,
+                                    JobType jobType, Long salaryMin, Pageable pageable) {
 
         keyword  = (keyword  == null) ? "" : keyword.trim();
         city     = (city     == null) ? "" : city.trim();
         industry = (industry == null) ? "" : industry.trim();
 
-        return jobRepository.search(keyword, city, level, industry, pageable)
+        return jobRepository.search(keyword, city, level, industry, jobType, salaryMin, pageable)
                 .map(this::mapToResponse);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public JobResponse toResponse(Job job) {
+        return mapToResponse(job);
     }
 
     @Override

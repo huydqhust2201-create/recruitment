@@ -11,15 +11,18 @@ import {
 } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
+import CvPreview from '@/components/cv/CvPreview';
 import type { CvBuilderContent, CvTemplate } from '@/types';
 import {
   getDocumentById, createDocument, updateDocument, exportToPdf,
 } from '@/services/cvBuilder.service';
 
 const TEMPLATES: { key: CvTemplate; label: string; desc: string; color: string }[] = [
-  { key: 'MODERN', label: 'Hiện đại', desc: 'Navy header', color: 'border-blue-400 bg-[#e8f5f0]' },
-  { key: 'CLASSIC', label: 'Cổ điển', desc: 'Đơn giản', color: 'border-gray-400 bg-gray-50' },
-  { key: 'CREATIVE', label: 'Sáng tạo', desc: 'Hồng/tím', color: 'border-pink-400 bg-pink-50' },
+  { key: 'MODERN',       label: 'Hiện đại',      desc: 'Blue header',    color: 'border-blue-400 bg-blue-50' },
+  { key: 'PROFESSIONAL', label: 'Chuyên nghiệp', desc: 'Dark sidebar',   color: 'border-[#1e3a5f] bg-[#e8f5f0]' },
+  { key: 'CLASSIC',      label: 'Cổ điển',       desc: 'Đơn giản',      color: 'border-gray-400 bg-gray-50' },
+  { key: 'CREATIVE',     label: 'Sáng tạo',      desc: 'Hồng/tím',      color: 'border-pink-400 bg-pink-50' },
+  { key: 'MINIMAL',      label: 'Tối giản',      desc: 'Serif thanh lịch', color: 'border-amber-400 bg-amber-50' },
 ];
 
 const emptyContent = (): CvBuilderContent => ({
@@ -87,102 +90,7 @@ function Field({ label, children, hint }: { label: string; children: React.React
 const inputCls = 'w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-400';
 const textareaCls = inputCls + ' resize-none';
 
-// ── Live Preview ──────────────────────────────────────────
-function CvPreview({ content, template }: { content: CvBuilderContent; template: CvTemplate }) {
-  const p = content.personalInfo ?? {};
-  const headerBg = template === 'MODERN' ? '#1a4ba5' : template === 'CREATIVE' ? '#a62477' : '#444';
-
-  return (
-    <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden text-xs shadow-sm" style={{ fontFamily: 'sans-serif', minHeight: 500 }}>
-      {/* Header */}
-      <div style={{ background: headerBg, color: '#fff', padding: '20px 24px' }}>
-        <p style={{ fontSize: 18, fontWeight: 700, marginBottom: 2 }}>{p.fullName || 'Họ và tên'}</p>
-        {p.headline && <p style={{ opacity: 0.85, fontSize: 11 }}>{p.headline}</p>}
-        <div style={{ display: 'flex', gap: 12, marginTop: 6, opacity: 0.85, fontSize: 10 }}>
-          {p.email && <span>{p.email}</span>}
-          {p.phone && <span>{p.phone}</span>}
-          {p.address && <span>{p.address}</span>}
-        </div>
-      </div>
-
-      <div style={{ padding: '16px 24px', display: 'flex', flexDirection: 'column', gap: 14 }}>
-        {/* Summary */}
-        {p.summary && (
-          <div>
-            <p style={{ fontWeight: 600, color: headerBg, marginBottom: 4, fontSize: 11, textTransform: 'uppercase', letterSpacing: 1 }}>Giới thiệu</p>
-            <p style={{ color: '#555', lineHeight: 1.5 }}>{p.summary}</p>
-          </div>
-        )}
-
-        {/* Experience */}
-        {(content.experiences ?? []).length > 0 && (
-          <div>
-            <p style={{ fontWeight: 600, color: headerBg, marginBottom: 6, fontSize: 11, textTransform: 'uppercase', letterSpacing: 1 }}>Kinh nghiệm</p>
-            {content.experiences.map((e, i) => (
-              <div key={i} style={{ marginBottom: 8 }}>
-                <p style={{ fontWeight: 600, color: '#222' }}>{e.position} — {e.company}</p>
-                <p style={{ color: '#888', fontSize: 10 }}>{e.startDate}{e.current ? ' — Hiện tại' : e.endDate ? ` — ${e.endDate}` : ''}</p>
-                {e.description && <p style={{ color: '#555', marginTop: 2, lineHeight: 1.4 }}>{e.description}</p>}
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* Education */}
-        {(content.educations ?? []).length > 0 && (
-          <div>
-            <p style={{ fontWeight: 600, color: headerBg, marginBottom: 6, fontSize: 11, textTransform: 'uppercase', letterSpacing: 1 }}>Học vấn</p>
-            {content.educations.map((e, i) => (
-              <div key={i} style={{ marginBottom: 6 }}>
-                <p style={{ fontWeight: 600, color: '#222' }}>{e.school}</p>
-                <p style={{ color: '#555', fontSize: 10 }}>{e.degree}{e.major ? ` — ${e.major}` : ''}</p>
-                <p style={{ color: '#888', fontSize: 10 }}>{e.startDate}{e.endDate ? ` — ${e.endDate}` : ''}</p>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* Skills */}
-        {(content.skills ?? []).length > 0 && (
-          <div>
-            <p style={{ fontWeight: 600, color: headerBg, marginBottom: 6, fontSize: 11, textTransform: 'uppercase', letterSpacing: 1 }}>Kỹ năng</p>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-              {content.skills.map((s, i) => (
-                <span key={i} style={{ background: '#f0f4ff', color: headerBg, borderRadius: 4, padding: '2px 8px', fontSize: 10 }}>{s}</span>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Projects */}
-        {(content.projects ?? []).length > 0 && (
-          <div>
-            <p style={{ fontWeight: 600, color: headerBg, marginBottom: 6, fontSize: 11, textTransform: 'uppercase', letterSpacing: 1 }}>Dự án</p>
-            {content.projects.map((pr, i) => (
-              <div key={i} style={{ marginBottom: 6 }}>
-                <p style={{ fontWeight: 600, color: '#222' }}>{pr.name}</p>
-                {pr.techStack && <p style={{ color: '#888', fontSize: 10 }}>{pr.techStack}</p>}
-                {pr.description && <p style={{ color: '#555', lineHeight: 1.4 }}>{pr.description}</p>}
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* Languages */}
-        {(content.languages ?? []).length > 0 && (
-          <div>
-            <p style={{ fontWeight: 600, color: headerBg, marginBottom: 4, fontSize: 11, textTransform: 'uppercase', letterSpacing: 1 }}>Ngôn ngữ</p>
-            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-              {content.languages.map((l, i) => (
-                <span key={i} style={{ color: '#555' }}>{l.name}{l.level ? ` (${l.level})` : ''}</span>
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
+// CvPreview is now the shared component imported from @/components/cv/CvPreview
 
 // ── Main editor ───────────────────────────────────────────
 function CvBuilderEditor() {

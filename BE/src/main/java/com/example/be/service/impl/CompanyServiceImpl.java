@@ -13,6 +13,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import java.text.Normalizer;
 
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -47,20 +48,22 @@ public class CompanyServiceImpl implements CompanyService {
 
         companyRepository.save(company);
 
-        // 4. Tao recruiter profile cho user va gan vao company
+        // 4. Gan company vao recruiter profile (tao moi hoac cap nhat)
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User khong ton tai"));
 
-        // Neu chua co profile thi tao moi
-        if (!recruiterProfileRepository.existsByUserId(userId)) {
-            RecruiterProfile profile = RecruiterProfile.builder()
-                    .user(user)
-                    .company(company)
-                    .build();
-            recruiterProfileRepository.save(profile);
-        }
+        RecruiterProfile profile = recruiterProfileRepository.findByUserId(userId)
+                .orElse(RecruiterProfile.builder().user(user).build());
+        profile.setCompany(company);
+        recruiterProfileRepository.save(profile);
 
         return mapToResponse(company);
+    }
+
+    @Override
+    public Optional<CompanyResponse> getByRecruiterId(UUID userId) {
+        return recruiterProfileRepository.findCompanyByUserId(userId)
+                .map(this::mapToResponse);
     }
 
     @Override

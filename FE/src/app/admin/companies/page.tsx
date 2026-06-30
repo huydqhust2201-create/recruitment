@@ -14,6 +14,8 @@ interface AdminCompany {
   logoUrl: string;
   isVerified: boolean;
   createdAt: string;
+  recruiterName?: string;
+  recruiterEmail?: string;
 }
 
 const BRAND = '#0d7a5f';
@@ -93,6 +95,7 @@ export default function AdminCompaniesPage() {
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Công ty</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Nhà tuyển dụng</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Ngành</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Thành phố</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Ngày tạo</th>
@@ -103,7 +106,7 @@ export default function AdminCompaniesPage() {
             <tbody className="divide-y divide-gray-100">
               {filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-4 py-10 text-center text-gray-400">
+                  <td colSpan={7} className="px-4 py-10 text-center text-gray-400">
                     Không có công ty nào
                   </td>
                 </tr>
@@ -125,6 +128,16 @@ export default function AdminCompaniesPage() {
                         </Link>
                       </div>
                     </div>
+                  </td>
+                  <td className="px-4 py-3">
+                    {c.recruiterName ? (
+                      <div>
+                        <p className="text-sm font-medium text-gray-900">{c.recruiterName}</p>
+                        <p className="text-xs text-gray-400">{c.recruiterEmail}</p>
+                      </div>
+                    ) : (
+                      <span className="text-xs text-gray-400 italic">Không có recruiter</span>
+                    )}
                   </td>
                   <td className="px-4 py-3 text-gray-600">{c.industry || '—'}</td>
                   <td className="px-4 py-3 text-gray-600">{c.city || '—'}</td>

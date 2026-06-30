@@ -79,9 +79,11 @@ public class CvPdfGeneratorServiceImpl implements CvPdfGeneratorService {
 
     private float[] accentColorFor(CvTemplate template) {
         return switch (template) {
-            case MODERN -> new float[]{0.10f, 0.30f, 0.65f};   // navy
-            case CLASSIC -> new float[]{0.25f, 0.25f, 0.25f};  // dark gray, tiet che
-            case CREATIVE -> new float[]{0.65f, 0.15f, 0.45f}; // hong/tia noi bat
+            case MODERN       -> new float[]{0.10f, 0.30f, 0.65f};
+            case CLASSIC      -> new float[]{0.25f, 0.25f, 0.25f};
+            case CREATIVE     -> new float[]{0.65f, 0.15f, 0.45f};
+            case PROFESSIONAL -> new float[]{0.12f, 0.23f, 0.37f}; // #1e3a5f dark navy
+            case MINIMAL      -> new float[]{0.07f, 0.07f, 0.07f}; // near-black
         };
     }
 
@@ -89,7 +91,7 @@ public class CvPdfGeneratorServiceImpl implements CvPdfGeneratorService {
         CvBuilderContent.PersonalInfo p = Optional.ofNullable(content.getPersonalInfo())
                 .orElse(new CvBuilderContent.PersonalInfo());
 
-        if (template == CvTemplate.CLASSIC) {
+        if (template == CvTemplate.CLASSIC || template == CvTemplate.MINIMAL) {
             // Don gian: ten + headline + lien he, khong bang mau
             w.drawText(nonNull(p.getFullName(), "Họ và tên"), w.boldFont, 22, 0, 0, 0);
             w.moveDown(26);
@@ -101,7 +103,7 @@ public class CvPdfGeneratorServiceImpl implements CvPdfGeneratorService {
             w.moveDown(14);
             w.drawDivider(accent);
         } else {
-            // MODERN / CREATIVE: bang mau full-width
+            // MODERN / CREATIVE / PROFESSIONAL: bang mau full-width
             float bandHeight = notBlank(p.getHeadline()) ? 80f : 64f;
             w.drawColoredBand(bandHeight, accent);
             float savedY = w.y;

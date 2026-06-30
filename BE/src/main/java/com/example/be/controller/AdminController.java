@@ -28,6 +28,7 @@ public class AdminController {
     private final JobRepository jobRepository;
     private final ApplicationRepository applicationRepository;
     private final CompanySubscriptionRepository subscriptionRepository;
+    private final RecruiterProfileRepository recruiterProfileRepository;
 
     @Transactional(readOnly = true)
     @GetMapping("/stats")
@@ -91,6 +92,17 @@ public class AdminController {
                     m.put("logoUrl", c.getLogoUrl() != null ? c.getLogoUrl() : "");
                     m.put("isVerified", c.isVerified());
                     m.put("createdAt", c.getCreatedAt() != null ? c.getCreatedAt().toString() : "");
+                    // Recruiter info — giúp admin biết công ty thuộc về ai
+                    recruiterProfileRepository.findByCompanyId(c.getId()).ifPresentOrElse(
+                        rp -> {
+                            m.put("recruiterName", rp.getUser().getFullName());
+                            m.put("recruiterEmail", rp.getUser().getEmail());
+                        },
+                        () -> {
+                            m.put("recruiterName", "");
+                            m.put("recruiterEmail", "");
+                        }
+                    );
                     return m;
                 })
                 .collect(Collectors.toList());

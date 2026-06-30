@@ -19,16 +19,16 @@ public interface CandidateProfileRepository
     boolean existsByUserId(UUID userId);
 
     @Query(value = """
-            SELECT cp.id            AS profileId,
-                   u.full_name      AS fullName,
-                   u.email          AS email,
-                   cp.headline      AS headline,
+            SELECT cp.id::text       AS profileId,
+                   u.full_name       AS fullName,
+                   u.email           AS email,
+                   cp.headline       AS headline,
                    cp.current_position AS currentPosition,
                    cp.current_company  AS currentCompany,
                    cp.years_of_experience AS yearsOfExp,
-                   cp.city          AS city,
+                   cp.city           AS city,
                    cpr.parsed_skills AS parsedSkills,
-                   cf.file_url      AS cvFileUrl
+                   cf.file_url       AS cvFileUrl
             FROM candidate_profiles cp
             JOIN users u ON u.id = cp.user_id
             LEFT JOIN cv_files cf ON cf.candidate_id = cp.id AND cf.is_primary = true
@@ -54,4 +54,31 @@ public interface CandidateProfileRepository
             @Param("minExp") Integer minExp,
             @Param("maxExp") Integer maxExp
     );
+
+    // Vector similarity search: tìm ứng viên phù hợp nhất với 1 job dựa trên CV embedding
+    @Query(value = """
+            SELECT cp.id::text,
+                   u.full_name,
+                   u.email,
+                   cp.headline,
+                   cp.current_position,
+                   cp.current_company,
+                   cp.years_of_experience,
+                   cp.city,
+                   cpr.parsed_skills,
+                   cf.file_url,
+                   1 - (cp.cv_embedding <=> j.jd_embedding) AS similarity_score
+            FROM candidate_profiles cp
+            JOIN users u ON u.id = cp.user_id
+            CROSS JOIN jobs j
+            LEFT JOIN cv_files cf ON cf.candidate_id = cp.id AND cf.is_primary = true
+            LEFT JOIN cv_parse_results cpr ON cpr.cv_file_id = cf.id
+            WHERE j.id = CAST(:jobId AS uuid)
+              AND j.jd_embedding IS NOT NULL
+              AND cp.cv_embedding IS NOT NULL
+              AND u.is_active = true
+            ORDER BY cp.cv_embedding <=> j.jd_embedding
+            LIMIT 20
+            """, nativeQuery = true)
+    List<Object[]> findCandidatesByJobVector(@Param("jobId") String jobId);
 }

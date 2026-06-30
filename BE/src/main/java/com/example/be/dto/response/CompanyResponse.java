@@ -1,5 +1,6 @@
 package com.example.be.dto.response;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Builder;
 import lombok.Data;
 
@@ -17,5 +18,6 @@ public class CompanyResponse {
     private String companySize;
     private String description;
     private String city;
+    @JsonProperty("isVerified")
     private boolean isVerified;
 }

@@ -147,36 +147,30 @@ function JobsTab({ jobs, loading }: { jobs: Job[]; loading: boolean }) {
   );
 }
 
+const LEVEL_LABELS: Record<string, string> = {
+  INTERN: 'Thực tập', JUNIOR: 'Junior', MID: 'Middle',
+  SENIOR: 'Senior', LEAD: 'Lead', MANAGER: 'Manager',
+};
+
 // ── Tab 2: Tìm CV ứng viên ─────────────────────────────────
 function CvSearchTab({ jobs }: { jobs: Job[] }) {
-  const [selectedJob, setSelectedJob] = useState('');
-  const [skills, setSkills] = useState('');
-  const [city, setCity] = useState('');
-  const [expRange, setExpRange] = useState('');
+  const [selectedJobId, setSelectedJobId] = useState('');
   const [searching, setSearching] = useState(false);
   const [results, setResults] = useState<CandidateSearchResult[]>([]);
   const [searched, setSearched] = useState(false);
 
-  const expOptions = [
-    { label: 'Kinh nghiệm...', min: undefined, max: undefined },
-    { label: '0 – 1 năm', min: 0, max: 1 },
-    { label: '2 – 3 năm', min: 2, max: 3 },
-    { label: '3+ năm', min: 3, max: undefined },
-    { label: '5+ năm', min: 5, max: undefined },
-  ];
-
-  const cities = ['', 'Hà Nội', 'Hồ Chí Minh', 'Đà Nẵng', 'Cần Thơ', 'Hải Phòng', 'Bình Dương'];
+  const activeJobs = jobs.filter(j => j.status === 'ACTIVE');
+  const selectedJob = activeJobs.find(j => j.id === selectedJobId) ?? null;
 
   const handleSearch = useCallback(async () => {
+    if (!selectedJobId) {
+      toast.error('Vui lòng chọn tin tuyển dụng');
+      return;
+    }
     setSearching(true);
-    const expOpt = expOptions.find((_, i) => String(i) === expRange);
     try {
       const res = await axiosInstance.post<CandidateSearchResult[]>('/api/recruiter/search-candidates', {
-        jobId: selectedJob || null,
-        skills: skills || null,
-        city: city || null,
-        minExp: expOpt?.min ?? null,
-        maxExp: expOpt?.max ?? null,
+        jobId: selectedJobId,
       });
       setResults(res.data);
       setSearched(true);
@@ -185,57 +179,72 @@ function CvSearchTab({ jobs }: { jobs: Job[] }) {
     } finally {
       setSearching(false);
     }
-  }, [selectedJob, skills, city, expRange]);
+  }, [selectedJobId]);
+
+  // Reset khi đổi job
+  const handleJobChange = (id: string) => {
+    setSelectedJobId(id);
+    setResults([]);
+    setSearched(false);
+  };
 
   return (
     <div className="bg-white rounded-2xl border border-gray-200 p-6">
-      <div className="flex items-center gap-2 mb-4">
+      <div className="flex items-center gap-2 mb-1">
         <SparklesIcon className="h-4 w-4" style={{ color: BRAND }} />
-        <h2 className="font-semibold text-gray-900">Tìm CV theo yêu cầu</h2>
+        <h2 className="font-semibold text-gray-900">Tìm ứng viên theo tin tuyển dụng</h2>
         <span className="text-xs px-2 py-0.5 rounded-full font-semibold" style={{ backgroundColor: 'var(--brand-light)', color: BRAND }}>AI Matching</span>
       </div>
+      <p className="text-xs text-gray-400 mb-4">AI tự phân tích JD và tìm CV phù hợp nhất — không cần nhập lại tiêu chí</p>
 
-      {/* Filters */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
-        <div className="relative">
-          <select value={selectedJob} onChange={e => setSelectedJob(e.target.value)}
-            className="w-full appearance-none rounded-xl border border-gray-200 px-4 py-2.5 pr-8 text-sm bg-white focus:outline-none focus:ring-2 text-gray-700">
-            <option value="">Chọn tin tuyển dụng...</option>
-            {jobs.filter(j => j.status === 'ACTIVE').map(j => (
-              <option key={j.id} value={j.id}>{j.title}</option>
-            ))}
-          </select>
-          <ChevronDownIcon className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
-        </div>
-
-        <div className="relative">
-          <select value={expRange} onChange={e => setExpRange(e.target.value)}
-            className="w-full appearance-none rounded-xl border border-gray-200 px-4 py-2.5 pr-8 text-sm bg-white focus:outline-none text-gray-700">
-            {expOptions.map((o, i) => <option key={i} value={String(i)}>{o.label}</option>)}
-          </select>
-          <ChevronDownIcon className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
-        </div>
-
-        <input value={skills} onChange={e => setSkills(e.target.value)}
-          placeholder="Kỹ năng (Python, React...)"
-          className="rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 text-gray-700"
-          onKeyDown={e => e.key === 'Enter' && handleSearch()} />
-
-        <div className="relative">
-          <MapPinIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-          <select value={city} onChange={e => setCity(e.target.value)}
-            className="w-full appearance-none rounded-xl border border-gray-200 pl-9 pr-8 py-2.5 text-sm bg-white focus:outline-none text-gray-700">
-            {cities.map(c => <option key={c} value={c}>{c || 'Địa điểm...'}</option>)}
-          </select>
-          <ChevronDownIcon className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
-        </div>
+      {/* Job selector */}
+      <div className="relative mb-3">
+        <BriefcaseIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+        <select value={selectedJobId} onChange={e => handleJobChange(e.target.value)}
+          className="w-full appearance-none rounded-xl border border-gray-200 pl-9 pr-8 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 text-gray-700">
+          <option value="">-- Chọn tin tuyển dụng --</option>
+          {activeJobs.map(j => (
+            <option key={j.id} value={j.id}>{j.title}</option>
+          ))}
+        </select>
+        <ChevronDownIcon className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
       </div>
 
-      <button onClick={handleSearch} disabled={searching}
-        className="w-full flex items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-semibold text-white transition-colors disabled:opacity-60"
+      {/* Criteria preview from selected job */}
+      {selectedJob && (
+        <div className="rounded-xl border border-dashed border-gray-200 bg-gray-50 p-3 mb-3">
+          <p className="text-xs font-semibold text-gray-500 mb-2">AI sẽ tìm ứng viên dựa trên:</p>
+          <div className="flex flex-wrap gap-2">
+            {selectedJob.level && (
+              <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium bg-purple-100 text-purple-700">
+                {LEVEL_LABELS[selectedJob.level] ?? selectedJob.level}
+              </span>
+            )}
+            {selectedJob.city && (
+              <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium bg-blue-100 text-blue-700">
+                <MapPinIcon className="h-3 w-3" /> {selectedJob.city}
+              </span>
+            )}
+            {selectedJob.skills?.filter(s => s.isRequired).slice(0, 6).map(s => (
+              <span key={s.skillId} className="rounded-full px-2.5 py-0.5 text-xs font-medium"
+                style={{ backgroundColor: 'var(--brand-light)', color: BRAND }}>
+                {s.skillName}
+              </span>
+            ))}
+            {(selectedJob.skills?.filter(s => s.isRequired).length ?? 0) > 6 && (
+              <span className="rounded-full px-2.5 py-0.5 text-xs bg-gray-100 text-gray-500">
+                +{selectedJob.skills.filter(s => s.isRequired).length - 6} kỹ năng
+              </span>
+            )}
+          </div>
+        </div>
+      )}
+
+      <button onClick={handleSearch} disabled={searching || !selectedJobId}
+        className="w-full flex items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-semibold text-white transition-colors disabled:opacity-50"
         style={{ background: `linear-gradient(90deg, ${BRAND}, ${BRAND_DARK})` }}>
         <SparklesIcon className="h-4 w-4" />
-        {searching ? 'Đang tìm kiếm...' : 'Tìm ứng viên phù hợp với AI'}
+        {searching ? 'AI đang phân tích và tìm kiếm...' : 'Tìm ứng viên phù hợp với AI'}
       </button>
 
       {/* Results */}
@@ -247,38 +256,33 @@ function CvSearchTab({ jobs }: { jobs: Job[] }) {
         <div className="text-center py-10 text-gray-500 mt-4">
           <SearchIcon className="mx-auto h-10 w-10 text-gray-300 mb-3" />
           <p className="font-medium">Không tìm thấy ứng viên phù hợp</p>
-          <p className="text-sm mt-1 text-gray-400">Thử thay đổi bộ lọc hoặc kỹ năng tìm kiếm</p>
+          <p className="text-sm mt-1 text-gray-400">Chưa có ứng viên nào có CV phù hợp với tin tuyển dụng này</p>
         </div>
       )}
 
       {!searching && results.length > 0 && (
         <div className="mt-5 flex flex-col gap-3">
-          <p className="text-sm text-gray-500">Tìm thấy <span className="font-semibold text-gray-800">{results.length}</span> ứng viên</p>
+          <p className="text-sm text-gray-500">
+            Tìm thấy <span className="font-semibold text-gray-800">{results.length}</span> ứng viên phù hợp
+          </p>
           {results.map(r => {
             const pct = Math.round(r.matchScore * 100);
             const initials = r.fullName.split(' ').map(w => w[0]).slice(-2).join('').toUpperCase();
             return (
               <div key={r.id} className="flex items-center gap-4 rounded-xl border border-gray-200 p-4 hover:border-gray-300 hover:shadow-sm transition-all">
-                {/* Avatar */}
                 <div className="shrink-0 h-11 w-11 rounded-full flex items-center justify-center font-bold text-white text-sm"
                   style={{ background: `linear-gradient(135deg, ${BRAND}, ${BRAND_DARK})` }}>
                   {initials}
                 </div>
 
-                {/* Info */}
                 <div className="flex-1 min-w-0">
                   <p className="font-semibold text-gray-900 text-sm">{r.fullName}</p>
                   <p className="text-xs font-medium truncate" style={{ color: BRAND }}>
                     {r.headline || r.currentPosition || 'Ứng viên'}
                   </p>
                   <div className="flex flex-wrap items-center gap-1.5 mt-0.5 text-xs text-gray-500">
-                    {r.currentPosition && r.headline && <span>{r.currentPosition}</span>}
-                    {r.yearsOfExperience != null && (
-                      <span>{r.yearsOfExperience} năm KN</span>
-                    )}
-                    {r.city && (
-                      <span className="flex items-center gap-0.5">· {r.city}</span>
-                    )}
+                    {r.yearsOfExperience != null && <span>{r.yearsOfExperience} năm KN</span>}
+                    {r.city && <span>· {r.city}</span>}
                   </div>
                   {r.skills.length > 0 && (
                     <div className="flex flex-wrap gap-1 mt-1.5">
@@ -297,7 +301,6 @@ function CvSearchTab({ jobs }: { jobs: Job[] }) {
                   )}
                 </div>
 
-                {/* Match + actions */}
                 <div className="shrink-0 text-right">
                   <p className="text-lg font-bold" style={{ color: BRAND }}>{pct}%</p>
                   <div className="w-20 h-1.5 rounded-full bg-gray-100 mt-1 mb-2 ml-auto">
@@ -322,7 +325,7 @@ function CvSearchTab({ jobs }: { jobs: Job[] }) {
       {!searching && !searched && (
         <div className="text-center py-8 mt-2 text-gray-400">
           <SparklesIcon className="mx-auto h-8 w-8 mb-2 opacity-40" />
-          <p className="text-sm">Điền bộ lọc và bấm tìm kiếm để AI gợi ý ứng viên phù hợp</p>
+          <p className="text-sm">Chọn một tin tuyển dụng để AI tự động tìm ứng viên phù hợp</p>
         </div>
       )}
     </div>

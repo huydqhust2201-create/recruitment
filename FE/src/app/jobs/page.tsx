@@ -12,9 +12,11 @@ import {
   SearchIcon, MapPinIcon, BriefcaseIcon, BuildingIcon,
   ChevronLeftIcon, ChevronRightIcon, FlameIcon, ClockIcon,
   SparklesIcon, BotIcon, FileCheckIcon, BarChart3Icon,
+  BookmarkIcon, BookmarkCheckIcon, SlidersHorizontalIcon, XIcon,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { JOB_CATEGORIES, POPULAR_CITIES } from '@/constants/categories';
+import { useAuth } from '@/contexts/AuthContext';
 
 const BRAND = '#0d7a5f';
 const BRAND_DARK = '#0a5c47';
@@ -33,6 +35,41 @@ const FEATURES = [
   { icon: <FileCheckIcon className="h-7 w-7" style={{ color: BRAND }} />, title: 'AI Cover Letter', desc: 'Tạo thư xin việc trong 5 giây' },
   { icon: <BarChart3Icon className="h-7 w-7" style={{ color: BRAND }} />, title: 'CV Score', desc: 'Đánh giá điểm hồ sơ tự động' },
 ];
+
+const SALARY_OPTIONS = [
+  { label: 'Tất cả mức lương', value: '' },
+  { label: 'Dưới 5 triệu', value: '1' },
+  { label: '5 - 10 triệu', value: '5000000' },
+  { label: '10 - 20 triệu', value: '10000000' },
+  { label: '20 - 30 triệu', value: '20000000' },
+  { label: 'Trên 30 triệu', value: '30000000' },
+];
+
+const JOB_TYPES = [
+  { label: 'Tất cả hình thức', value: '' },
+  { label: 'Toàn thời gian', value: 'FULL_TIME' },
+  { label: 'Bán thời gian', value: 'PART_TIME' },
+  { label: 'Remote', value: 'REMOTE' },
+  { label: 'Hybrid', value: 'HYBRID' },
+  { label: 'Thực tập', value: 'INTERNSHIP' },
+];
+
+const LEVELS = [
+  { label: 'Tất cả cấp độ', value: '' },
+  { label: 'Intern', value: 'INTERN' },
+  { label: 'Junior', value: 'JUNIOR' },
+  { label: 'Middle', value: 'MID' },
+  { label: 'Senior', value: 'SENIOR' },
+  { label: 'Lead', value: 'LEAD' },
+  { label: 'Manager', value: 'MANAGER' },
+];
+
+// ── Company logo with fallback ─────────────────────────────
+function CompanyLogo({ src, alt }: { src?: string; alt: string }) {
+  const [failed, setFailed] = useState(false);
+  if (!src || failed) return <BuildingIcon className="h-6 w-6 text-gray-300" />;
+  return <img src={src} alt={alt} className="h-full w-full object-contain" onError={() => setFailed(true)} />;
+}
 
 // ── Category sidebar ───────────────────────────────────────
 function CategorySidebar({ industry, onChange }: { industry: string; onChange: (v: string) => void }) {
@@ -67,45 +104,40 @@ function CategorySidebar({ industry, onChange }: { industry: string; onChange: (
   );
 }
 
-// ── Location chips ─────────────────────────────────────────
-function LocationChips({ city, onChange }: { city: string; onChange: (c: string) => void }) {
-  return (
-    <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
-      {['', ...POPULAR_CITIES].map((c) => (
-        <button
-          key={c || '__all'}
-          onClick={() => onChange(c)}
-          className="shrink-0 rounded-full px-3 py-1.5 text-xs font-medium transition-colors border flex items-center gap-1"
-          style={city === c
-            ? { backgroundColor: BRAND, color: '#fff', borderColor: BRAND }
-            : { background: '#fff', color: '#4b5563', borderColor: '#d1d5db' }
-          }
-        >
-          {c ? <><MapPinIcon className="h-3 w-3" />{c}</> : 'Tất cả'}
-        </button>
-      ))}
-    </div>
-  );
-}
-
-// ── Job card ───────────────────────────────────────────────
-function JobCard({ job }: { job: Job }) {
+// ── Job card with bookmark ─────────────────────────────────
+function JobCard({ job, savedIds, onToggleSave }: {
+  job: Job;
+  savedIds: Set<string>;
+  onToggleSave: (jobId: string) => void;
+}) {
   const isHot = job.applyCount >= 10;
+  const isSaved = savedIds.has(job.id);
+
   return (
-    <Link href={`/jobs/${job.slug}`}>
-      <div className="bg-white rounded-2xl border border-gray-200 p-4 hover:shadow-md transition-all h-full flex flex-col"
-        style={{ ['--tw-border-opacity' as string]: '1' }}
-        onMouseEnter={e => (e.currentTarget.style.borderColor = BRAND)}
-        onMouseLeave={e => (e.currentTarget.style.borderColor = '#e5e7eb')}
+    <div
+      className="bg-white rounded-2xl border border-gray-200 p-4 hover:shadow-md transition-all h-full flex flex-col relative group"
+      onMouseEnter={e => (e.currentTarget.style.borderColor = BRAND)}
+      onMouseLeave={e => (e.currentTarget.style.borderColor = '#e5e7eb')}
+    >
+      {/* Bookmark button */}
+      <button
+        onClick={e => { e.preventDefault(); onToggleSave(job.id); }}
+        className="absolute top-3 right-3 p-1.5 rounded-lg hover:bg-gray-100 transition-colors z-10"
+        title={isSaved ? 'Bỏ lưu' : 'Lưu việc làm'}
       >
-        <div className="flex items-start justify-between gap-2 mb-3">
+        {isSaved
+          ? <BookmarkCheckIcon className="h-4 w-4" style={{ color: BRAND }} />
+          : <BookmarkIcon className="h-4 w-4 text-gray-400 group-hover:text-gray-600" />
+        }
+      </button>
+
+      <Link href={`/jobs/${job.slug}`} className="flex flex-col flex-1">
+        <div className="flex items-start gap-2 mb-3 pr-8">
           <div className="h-12 w-12 rounded-xl border border-gray-100 bg-gray-50 flex items-center justify-center overflow-hidden shrink-0">
-            {job.companyLogo
-              ? <img src={job.companyLogo} alt={job.companyName} className="h-full w-full object-contain" />
-              : <BuildingIcon className="h-6 w-6 text-gray-300" />}
+            <CompanyLogo src={job.companyLogo} alt={job.companyName} />
           </div>
           {isHot && (
-            <span className="flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold shrink-0"
+            <span className="flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold shrink-0 ml-auto"
               style={{ backgroundColor: '#fef2f2', color: 'var(--accent-hot)' }}>
               <FlameIcon className="h-3 w-3" /> HOT
             </span>
@@ -136,8 +168,60 @@ function JobCard({ job }: { job: Job }) {
           <span>{timeAgo(job.publishedAt || job.createdAt)}</span>
           {job.deadline && <span className="ml-auto">Hạn {new Date(job.deadline).toLocaleDateString('vi-VN')}</span>}
         </div>
+      </Link>
+    </div>
+  );
+}
+
+// ── Filter bar ─────────────────────────────────────────────
+function FilterBar({
+  city, jobType, salaryMin, level, onCity, onJobType, onSalaryMin, onLevel, onReset, hasFilter,
+}: {
+  city: string; jobType: string; salaryMin: string; level: string;
+  onCity: (v: string) => void; onJobType: (v: string) => void;
+  onSalaryMin: (v: string) => void; onLevel: (v: string) => void;
+  onReset: () => void; hasFilter: boolean;
+}) {
+  const selectClass = "w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 focus:outline-none focus:border-[#0d7a5f] cursor-pointer";
+  return (
+    <div className="bg-white rounded-2xl border border-gray-200 p-4">
+      <div className="flex items-center gap-2 mb-3">
+        <SlidersHorizontalIcon className="h-4 w-4" style={{ color: BRAND }} />
+        <span className="text-sm font-semibold text-gray-700">Lọc việc làm</span>
+        {hasFilter && (
+          <button onClick={onReset} className="ml-auto flex items-center gap-1 text-xs text-red-500 hover:text-red-600 transition-colors">
+            <XIcon className="h-3 w-3" /> Xóa bộ lọc
+          </button>
+        )}
       </div>
-    </Link>
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div className="flex flex-col gap-1">
+          <label className="text-xs text-gray-500 font-medium">📍 Địa điểm</label>
+          <select value={city} onChange={e => onCity(e.target.value)} className={selectClass}>
+            <option value="">Tất cả tỉnh/thành</option>
+            {POPULAR_CITIES.map(c => <option key={c} value={c}>{c}</option>)}
+          </select>
+        </div>
+        <div className="flex flex-col gap-1">
+          <label className="text-xs text-gray-500 font-medium">💼 Hình thức</label>
+          <select value={jobType} onChange={e => onJobType(e.target.value)} className={selectClass}>
+            {JOB_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+          </select>
+        </div>
+        <div className="flex flex-col gap-1">
+          <label className="text-xs text-gray-500 font-medium">💰 Mức lương</label>
+          <select value={salaryMin} onChange={e => onSalaryMin(e.target.value)} className={selectClass}>
+            {SALARY_OPTIONS.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+          </select>
+        </div>
+        <div className="flex flex-col gap-1">
+          <label className="text-xs text-gray-500 font-medium">📊 Cấp độ</label>
+          <select value={level} onChange={e => onLevel(e.target.value)} className={selectClass}>
+            {LEVELS.map(l => <option key={l.value} value={l.value}>{l.label}</option>)}
+          </select>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -145,6 +229,7 @@ function JobCard({ job }: { job: Job }) {
 function JobsPageInner() {
   const searchParams = useSearchParams();
   const router = useRouter();
+  const { user } = useAuth();
 
   const [jobs, setJobs] = useState<Job[]>([]);
   const [total, setTotal] = useState(0);
@@ -155,21 +240,35 @@ function JobsPageInner() {
   const [industry, setIndustry] = useState(searchParams.get('industry') || '');
   const [city, setCity] = useState(searchParams.get('city') || '');
   const [level, setLevel] = useState('');
+  const [jobType, setJobType] = useState('');
+  const [salaryMin, setSalaryMin] = useState('');
   const [draftKeyword, setDraftKeyword] = useState(searchParams.get('keyword') || '');
   const [nlMode, setNlMode] = useState(false);
   const [nlQuery, setNlQuery] = useState('');
   const [nlSearching, setNlSearching] = useState(false);
   const [nlSummary, setNlSummary] = useState('');
+  const [savedIds, setSavedIds] = useState<Set<string>>(new Set());
   const heroRef = useRef<HTMLDivElement>(null);
+
+  // Load saved job IDs when candidate is logged in
+  useEffect(() => {
+    if (user?.role === 'CANDIDATE') {
+      axiosInstance.get<string[]>('/api/candidate/saved-jobs/ids')
+        .then(res => setSavedIds(new Set(res.data)))
+        .catch(() => {});
+    }
+  }, [user]);
 
   const fetchJobs = useCallback(async () => {
     setLoading(true);
     try {
       const params: Record<string, string | number> = { page, size: 9 };
-      if (keyword) params.keyword = keyword;
-      if (city) params.city = city;
-      if (level) params.level = level;
-      if (industry) params.industry = industry;
+      if (keyword)   params.keyword   = keyword;
+      if (city)      params.city      = city;
+      if (level)     params.level     = level;
+      if (industry)  params.industry  = industry;
+      if (jobType)   params.jobType   = jobType;
+      if (salaryMin) params.salaryMin = salaryMin;
       const res = await axiosInstance.get<PageResponse<Job>>('/api/jobs', { params });
       setJobs(res.data.content);
       setTotal(res.data.totalElements);
@@ -179,7 +278,7 @@ function JobsPageInner() {
     } finally {
       setLoading(false);
     }
-  }, [page, keyword, city, level, industry]);
+  }, [page, keyword, city, level, industry, jobType, salaryMin]);
 
   useEffect(() => { fetchJobs(); }, [fetchJobs]);
 
@@ -190,9 +289,28 @@ function JobsPageInner() {
     heroRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
   };
 
-  const handleCityChange = (c: string) => { setCity(c); setPage(0); };
   const handleIndustryChange = (v: string) => { setIndustry(v); setPage(0); };
   const handleQuickCat = (v: string) => { setIndustry(v); setPage(0); router.push(`/jobs?industry=${v}`); };
+  const handleReset = () => { setCity(''); setJobType(''); setSalaryMin(''); setLevel(''); setPage(0); };
+  const hasFilter = !!(city || jobType || salaryMin || level);
+
+  const handleToggleSave = async (jobId: string) => {
+    if (!user) { router.push('/login'); return; }
+    if (user.role !== 'CANDIDATE') { toast.error('Chỉ ứng viên mới có thể lưu việc làm'); return; }
+    try {
+      if (savedIds.has(jobId)) {
+        await axiosInstance.delete(`/api/candidate/saved-jobs/${jobId}`);
+        setSavedIds(prev => { const n = new Set(prev); n.delete(jobId); return n; });
+        toast.success('Đã bỏ lưu việc làm');
+      } else {
+        await axiosInstance.post(`/api/candidate/saved-jobs/${jobId}`);
+        setSavedIds(prev => new Set([...prev, jobId]));
+        toast.success('Đã lưu việc làm');
+      }
+    } catch {
+      toast.error('Không thể thực hiện, vui lòng thử lại');
+    }
+  };
 
   const handleNlSearch = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -217,8 +335,6 @@ function JobsPageInner() {
     }
   };
 
-  const LEVELS = ['', 'INTERN', 'JUNIOR', 'MID', 'SENIOR', 'LEAD', 'MANAGER'];
-
   return (
     <div className="min-h-screen" style={{ background: 'var(--surface-tinted)' }}>
       <Navbar />
@@ -226,7 +342,6 @@ function JobsPageInner() {
       {/* ── Hero ── */}
       <div ref={heroRef} style={{ background: `linear-gradient(135deg, ${BRAND}, ${BRAND_DARK})` }} className="text-white pt-10 pb-8">
         <div className="mx-auto max-w-4xl px-4 sm:px-6 text-center">
-          {/* Badge */}
           <span className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold mb-4"
             style={{ backgroundColor: 'rgba(255,255,255,0.15)', color: '#fff' }}>
             ✦ AI-Powered Recruitment
@@ -276,7 +391,7 @@ function JobsPageInner() {
               </form>
             ) : (
               <form onSubmit={handleSearch} className="flex">
-                <div className="flex items-center flex-1 px-4 border-r border-gray-200">
+                <div className="flex items-center flex-1 px-4">
                   <SearchIcon className="h-4 w-4 text-gray-400 shrink-0 mr-3" />
                   <input
                     value={draftKeyword}
@@ -284,14 +399,6 @@ function JobsPageInner() {
                     placeholder="Tên việc làm, kỹ năng, công ty..."
                     className="flex-1 text-sm text-gray-800 placeholder-gray-400 focus:outline-none py-3.5"
                   />
-                </div>
-                <div className="flex items-center px-4 border-r border-gray-200">
-                  <MapPinIcon className="h-4 w-4 text-gray-400 shrink-0 mr-2" />
-                  <select value={city} onChange={e => { setCity(e.target.value); setPage(0); }}
-                    className="text-sm text-gray-700 focus:outline-none bg-transparent py-3.5">
-                    <option value="">Hà Nội ▾</option>
-                    {POPULAR_CITIES.map(c => <option key={c} value={c}>{c}</option>)}
-                  </select>
                 </div>
                 <button type="submit"
                   className="px-6 py-3.5 text-sm font-semibold text-white shrink-0 flex items-center gap-2 transition-colors"
@@ -362,26 +469,36 @@ function JobsPageInner() {
         <div className="flex flex-col lg:flex-row gap-6 items-start">
           <CategorySidebar industry={industry} onChange={handleIndustryChange} />
 
-          <div className="flex-1 min-w-0 flex flex-col gap-5">
-            {/* City chips */}
-            <LocationChips city={city} onChange={handleCityChange} />
+          <div className="flex-1 min-w-0 flex flex-col gap-4">
+            {/* Filter bar */}
+            <FilterBar
+              city={city} jobType={jobType} salaryMin={salaryMin} level={level}
+              onCity={v => { setCity(v); setPage(0); }}
+              onJobType={v => { setJobType(v); setPage(0); }}
+              onSalaryMin={v => { setSalaryMin(v); setPage(0); }}
+              onLevel={v => { setLevel(v); setPage(0); }}
+              onReset={handleReset}
+              hasFilter={hasFilter}
+            />
 
-            {/* Level filter + results count */}
-            <div className="flex items-center justify-between gap-3">
+            {/* Results row */}
+            <div className="flex items-center justify-between">
               <p className="text-sm text-gray-600 font-medium">
                 {loading ? 'Đang tải...' : (
                   <>
                     {industry && <span style={{ color: BRAND }}>{JOB_CATEGORIES.find(c => c.value === industry)?.label} · </span>}
                     <span>{total.toLocaleString()} việc làm</span>
+                    {hasFilter && <span className="text-gray-400"> (đã lọc)</span>}
                   </>
                 )}
               </p>
-              <select value={level} onChange={e => { setLevel(e.target.value); setPage(0); }}
-                className="rounded-lg border border-gray-200 px-3 py-1.5 text-xs bg-white focus:outline-none">
-                <option value="">Tất cả cấp độ</option>
-                {['INTERN', 'JUNIOR', 'MID', 'SENIOR', 'LEAD', 'MANAGER'].map(l =>
-                  <option key={l} value={l}>{JOB_LEVEL_LABELS[l]}</option>)}
-              </select>
+              {user?.role === 'CANDIDATE' && (
+                <Link href="/candidate/saved-jobs"
+                  className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border transition-colors hover:bg-gray-50"
+                  style={{ color: BRAND, borderColor: 'var(--brand-mid)' }}>
+                  <BookmarkCheckIcon className="h-3.5 w-3.5" /> Việc đã lưu
+                </Link>
+              )}
             </div>
 
             {/* Job grid */}
@@ -392,10 +509,18 @@ function JobsPageInner() {
                 <BriefcaseIcon className="mx-auto h-12 w-12 text-gray-300 mb-3" />
                 <p className="text-gray-500 font-medium">Không tìm thấy việc làm phù hợp</p>
                 <p className="text-gray-400 text-sm mt-1">Thử thay đổi từ khoá hoặc bộ lọc</p>
+                {hasFilter && (
+                  <button onClick={handleReset} className="mt-3 text-sm font-medium px-4 py-2 rounded-lg"
+                    style={{ backgroundColor: 'var(--brand-light)', color: BRAND }}>
+                    Xóa bộ lọc
+                  </button>
+                )}
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
-                {jobs.map((job) => <JobCard key={job.id} job={job} />)}
+                {jobs.map((job) => (
+                  <JobCard key={job.id} job={job} savedIds={savedIds} onToggleSave={handleToggleSave} />
+                ))}
               </div>
             )}
 

@@ -24,6 +24,10 @@ public class MinioServiceImpl implements MinioService {
     @Value("${minio.url}")
     private String minioUrl;
 
+    // URL công khai (R2.dev hoặc custom domain). Nếu trống → dùng minioUrl/bucket/file (local)
+    @Value("${minio.public-url:}")
+    private String publicUrl;
+
     private static final String PUBLIC_READ_POLICY = """
             {"Version":"2012-10-17","Statement":[{"Effect":"Allow","Principal":{"AWS":["*"]},"Action":["s3:GetObject"],"Resource":["arn:aws:s3:::%s/*"]}]}
             """;
@@ -66,8 +70,8 @@ public class MinioServiceImpl implements MinioService {
                             .build()
             );
 
-            // 3. Trả về URL
-            String fileUrl = minioUrl + "/" + bucket + "/" + fileName;
+            // 3. Trả về URL công khai
+            String fileUrl = buildPublicUrl(fileName);
             log.info("Upload thành công: {}", fileUrl);
             return fileUrl;
 
@@ -97,7 +101,7 @@ public class MinioServiceImpl implements MinioService {
                             .build()
             );
 
-            String fileUrl = minioUrl + "/" + bucket + "/" + fileName;
+            String fileUrl = buildPublicUrl(fileName);
             log.info("Upload thành công: {}", fileUrl);
             return fileUrl;
 
@@ -113,8 +117,7 @@ public class MinioServiceImpl implements MinioService {
     public void deleteFile(String fileUrl) {
         try {
             // Lấy object name từ URL
-            String objectName = fileUrl
-                    .replace(minioUrl + "/" + bucket + "/", "");
+            String objectName = extractObjectName(fileUrl);
 
             minioClient.removeObject(
                     RemoveObjectArgs.builder()
@@ -134,5 +137,21 @@ public class MinioServiceImpl implements MinioService {
         if (fileName == null || !fileName.contains(".")) return "pdf";
         return fileName.substring(fileName.lastIndexOf(".") + 1)
                 .toLowerCase();
+    }
+
+    // R2.dev: https://pub-xxx.r2.dev/<folder/file>  (không có bucket trong path)
+    // Local MinIO: http://localhost:9000/<bucket>/<folder/file>
+    private String buildPublicUrl(String objectPath) {
+        if (publicUrl != null && !publicUrl.isBlank()) {
+            return publicUrl.stripTrailing() + "/" + objectPath;
+        }
+        return minioUrl + "/" + bucket + "/" + objectPath;
+    }
+
+    private String extractObjectName(String fileUrl) {
+        if (publicUrl != null && !publicUrl.isBlank() && fileUrl.startsWith(publicUrl)) {
+            return fileUrl.replace(publicUrl.stripTrailing() + "/", "");
+        }
+        return fileUrl.replace(minioUrl + "/" + bucket + "/", "");
     }
 }

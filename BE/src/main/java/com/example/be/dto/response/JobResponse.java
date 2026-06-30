@@ -1,5 +1,6 @@
 package com.example.be.dto.response;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Builder;
 import lombok.Data;
 
@@ -23,6 +24,7 @@ public class JobResponse {
     private String city;
     private Long salaryMin;
     private Long salaryMax;
+    @JsonProperty("isSalaryPublic")
     private boolean isSalaryPublic;
     private String status;
     private int viewCount;

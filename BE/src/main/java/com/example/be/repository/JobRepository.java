@@ -3,6 +3,7 @@ package com.example.be.repository;
 import com.example.be.entity.Job;
 import com.example.be.entity.enums.JobLevel;
 import com.example.be.entity.enums.JobStatus;
+import com.example.be.entity.enums.JobType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -37,7 +38,7 @@ public interface JobRepository extends JpaRepository<Job, UUID> {
 """)
     List<Job> findByRecruiterIdWithSkills(@Param("recruiterId") UUID recruiterId);
 
-    // Tìm kiếm theo title + city + level + industry
+    // Tìm kiếm theo title + city + level + industry + jobType + salaryMin
     @Query("""
         SELECT j FROM Job j
         WHERE j.status = 'ACTIVE'
@@ -45,12 +46,16 @@ public interface JobRepository extends JpaRepository<Job, UUID> {
         AND (:city = '' OR LOWER(j.city) LIKE LOWER(CONCAT('%', :city, '%')))
         AND (:level IS NULL OR j.level = :level)
         AND (:industry = '' OR j.industry = :industry)
+        AND (:jobType IS NULL OR j.jobType = :jobType)
+        AND (:salaryMin IS NULL OR j.isSalaryPublic = false OR j.salaryMax >= :salaryMin)
     """)
     Page<Job> search(
-            @Param("keyword")  String keyword,
-            @Param("city")     String city,
-            @Param("level")    JobLevel level,
-            @Param("industry") String industry,
+            @Param("keyword")   String keyword,
+            @Param("city")      String city,
+            @Param("level")     JobLevel level,
+            @Param("industry")  String industry,
+            @Param("jobType")   JobType jobType,
+            @Param("salaryMin") Long salaryMin,
             Pageable pageable
     );
     // fetch cáº£ jobSkills khi fetch jobs

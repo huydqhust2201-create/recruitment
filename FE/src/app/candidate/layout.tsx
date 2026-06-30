@@ -9,7 +9,7 @@ import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import {
   LayoutDashboardIcon, UserIcon, FileTextIcon, BriefcaseIcon,
-  ClipboardListIcon, PenSquareIcon, AlertCircleIcon,
+  ClipboardListIcon, PenSquareIcon, AlertCircleIcon, BookmarkCheckIcon,
 } from 'lucide-react';
 import axiosInstance from '@/lib/axios';
 
@@ -20,7 +20,8 @@ const NAV = [
   { href: '/candidate/profile', label: 'Hồ sơ', icon: UserIcon },
   { href: '/candidate/cv', label: 'Quản lý CV', icon: FileTextIcon },
   { href: '/candidate/cv-builder', label: 'Tạo CV', icon: PenSquareIcon },
-  { href: '/candidate/jobs', label: 'Tìm việc', icon: BriefcaseIcon },
+  { href: '/candidate/jobs', label: 'Tìm việc AI', icon: BriefcaseIcon },
+  { href: '/candidate/saved-jobs', label: 'Việc đã lưu', icon: BookmarkCheckIcon },
   { href: '/candidate/applications', label: 'Đơn ứng tuyển', icon: ClipboardListIcon },
 ];
 

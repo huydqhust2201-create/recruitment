@@ -10,7 +10,7 @@ import Button from '@/components/ui/Button';
 import { PageLoader } from '@/components/ui/LoadingSpinner';
 import {
   BuildingIcon, PencilIcon, CheckIcon, ShieldCheckIcon, ShieldXIcon,
-  ExternalLinkIcon, BriefcaseIcon, ArrowRightIcon,
+  ExternalLinkIcon, BriefcaseIcon, ArrowRightIcon, AlertCircleIcon,
 } from 'lucide-react';
 import Link from 'next/link';
 import toast from 'react-hot-toast';
@@ -39,6 +39,7 @@ interface CompanyForm {
 export default function RecruiterCompanyPage() {
   const [company, setCompany] = useState<Company | null>(null);
   const [loading, setLoading] = useState(true);
+  const [serverError, setServerError] = useState(false);
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState<CompanyForm>({
@@ -47,16 +48,18 @@ export default function RecruiterCompanyPage() {
   const [errors, setErrors] = useState<Partial<CompanyForm>>({});
 
   const fetchCompany = async () => {
-    const savedId = localStorage.getItem('companyId');
-    if (!savedId) {
-      setEditing(true);
-      setLoading(false);
-      return;
-    }
+    setServerError(false);
     try {
-      const res = await axiosInstance.get<Company>(`/api/recruiter/companies/${savedId}`);
+      const res = await axiosInstance.get<Company>('/api/recruiter/companies/me');
+      // 204 = recruiter chưa có công ty
+      if (res.status === 204 || !res.data) {
+        setCompany(null);
+        setEditing(true);
+        return;
+      }
       const c = res.data;
       setCompany(c);
+      setEditing(false);
       setForm({
         name: c.name ?? '',
         website: c.website ?? '',
@@ -65,9 +68,16 @@ export default function RecruiterCompanyPage() {
         description: c.description ?? '',
         city: c.city ?? '',
       });
-    } catch {
-      localStorage.removeItem('companyId');
-      setEditing(true);
+    } catch (err: unknown) {
+      // Phân biệt 404 "không có công ty" vs lỗi server thật
+      const status = (err as { response?: { status?: number } })?.response?.status;
+      if (status === 404) {
+        setCompany(null);
+        setEditing(true);
+      } else {
+        // Network error, 500, v.v → hiện lỗi, không cho tạo nhầm
+        setServerError(true);
+      }
     } finally {
       setLoading(false);
     }
@@ -99,17 +109,17 @@ export default function RecruiterCompanyPage() {
         const res = await axiosInstance.put<Company>(`/api/recruiter/companies/${company.id}`, form);
         setCompany(res.data);
         toast.success('Cập nhật thông tin công ty thành công!');
+        setEditing(false);
       } else {
         const res = await axiosInstance.post<Company>('/api/recruiter/companies', form);
         setCompany(res.data);
-        localStorage.setItem('companyId', String(res.data.id));
         toast.success('Tạo công ty thành công!');
+        // Refresh từ server để lấy data chuẩn
+        await fetchCompany();
       }
-      await fetchCompany();
-      setEditing(false);
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Lưu thất bại';
-      toast.error(message);
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      toast.error(msg ?? 'Lưu thất bại');
     } finally {
       setSaving(false);
     }
@@ -130,6 +140,25 @@ export default function RecruiterCompanyPage() {
           </Button>
         )}
       </div>
+
+      {/* Server error banner */}
+      {serverError && (
+        <div className="rounded-2xl border border-red-200 bg-red-50 p-5 flex items-start gap-3">
+          <AlertCircleIcon className="h-5 w-5 text-red-500 shrink-0 mt-0.5" />
+          <div>
+            <p className="font-semibold text-red-700 text-sm">Không thể kết nối server</p>
+            <p className="text-xs text-red-600 mt-1">
+              Không tải được thông tin công ty. Vui lòng kiểm tra server đang chạy rồi thử lại.
+            </p>
+            <button
+              onClick={() => { setLoading(true); fetchCompany(); }}
+              className="mt-3 text-xs font-medium text-red-700 underline"
+            >
+              Thử lại
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Company header */}
       {company && (
@@ -160,81 +189,83 @@ export default function RecruiterCompanyPage() {
         </div>
       )}
 
-      {/* Form */}
-      <div className="bg-white rounded-2xl border border-gray-200 p-6">
-        <h2 className="font-semibold text-gray-900 mb-5">
-          {company ? 'Chỉnh sửa thông tin' : 'Tạo thông tin công ty'}
-        </h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-          <Input
-            label="Tên công ty"
-            placeholder="Công ty TNHH ABC"
-            value={form.name}
-            onChange={(e) => setForm({ ...form, name: e.target.value })}
-            error={errors.name}
-            disabled={!editing}
-            required
-          />
-          <Input
-            label="Website"
-            type="url"
-            placeholder="https://company.com"
-            value={form.website}
-            onChange={(e) => setForm({ ...form, website: e.target.value })}
-            disabled={!editing}
-          />
-          <Select
-            label="Ngành nghề"
-            options={INDUSTRY_OPTIONS}
-            placeholder="Chọn ngành nghề"
-            value={form.industry}
-            onChange={(e) => setForm({ ...form, industry: e.target.value })}
-            disabled={!editing}
-          />
-          <Select
-            label="Quy mô công ty"
-            options={SIZE_OPTIONS}
-            placeholder="Chọn quy mô"
-            value={form.companySize}
-            onChange={(e) => setForm({ ...form, companySize: e.target.value })}
-            disabled={!editing}
-          />
-          <Select
-            label="Thành phố"
-            options={CITY_OPTIONS}
-            placeholder="Chọn thành phố"
-            value={form.city}
-            onChange={(e) => setForm({ ...form, city: e.target.value })}
-            error={errors.city}
-            disabled={!editing}
-            required
-          />
-        </div>
-        <div className="mt-5">
-          <Textarea
-            label="Mô tả công ty"
-            placeholder="Giới thiệu về công ty, văn hóa làm việc, phúc lợi..."
-            value={form.description}
-            onChange={(e) => setForm({ ...form, description: e.target.value })}
-            disabled={!editing}
-            rows={5}
-          />
-        </div>
-
-        {editing && (
-          <div className="flex justify-end gap-3 mt-6 pt-5 border-t border-gray-100">
-            {company && (
-              <Button variant="outline" onClick={() => setEditing(false)} disabled={saving}>
-                Hủy
-              </Button>
-            )}
-            <Button loading={saving} onClick={handleSave}>
-              <CheckIcon className="h-4 w-4" />
-              {company ? 'Lưu thay đổi' : 'Tạo công ty'}
-            </Button>
+      {/* Form — chỉ hiện khi không có server error */}
+      {!serverError && (
+        <div className="bg-white rounded-2xl border border-gray-200 p-6">
+          <h2 className="font-semibold text-gray-900 mb-5">
+            {company ? 'Chỉnh sửa thông tin' : 'Tạo thông tin công ty'}
+          </h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+            <Input
+              label="Tên công ty"
+              placeholder="Công ty TNHH ABC"
+              value={form.name}
+              onChange={(e) => setForm({ ...form, name: e.target.value })}
+              error={errors.name}
+              disabled={!editing}
+              required
+            />
+            <Input
+              label="Website"
+              type="url"
+              placeholder="https://company.com"
+              value={form.website}
+              onChange={(e) => setForm({ ...form, website: e.target.value })}
+              disabled={!editing}
+            />
+            <Select
+              label="Ngành nghề"
+              options={INDUSTRY_OPTIONS}
+              placeholder="Chọn ngành nghề"
+              value={form.industry}
+              onChange={(e) => setForm({ ...form, industry: e.target.value })}
+              disabled={!editing}
+            />
+            <Select
+              label="Quy mô công ty"
+              options={SIZE_OPTIONS}
+              placeholder="Chọn quy mô"
+              value={form.companySize}
+              onChange={(e) => setForm({ ...form, companySize: e.target.value })}
+              disabled={!editing}
+            />
+            <Select
+              label="Thành phố"
+              options={CITY_OPTIONS}
+              placeholder="Chọn thành phố"
+              value={form.city}
+              onChange={(e) => setForm({ ...form, city: e.target.value })}
+              error={errors.city}
+              disabled={!editing}
+              required
+            />
           </div>
-        )}
-      </div>
+          <div className="mt-5">
+            <Textarea
+              label="Mô tả công ty"
+              placeholder="Giới thiệu về công ty, văn hóa làm việc, phúc lợi..."
+              value={form.description}
+              onChange={(e) => setForm({ ...form, description: e.target.value })}
+              disabled={!editing}
+              rows={5}
+            />
+          </div>
+
+          {editing && (
+            <div className="flex justify-end gap-3 mt-6 pt-5 border-t border-gray-100">
+              {company && (
+                <Button variant="outline" onClick={() => setEditing(false)} disabled={saving}>
+                  Hủy
+                </Button>
+              )}
+              <Button loading={saving} onClick={handleSave}>
+                <CheckIcon className="h-4 w-4" />
+                {company ? 'Lưu thay đổi' : 'Tạo công ty'}
+              </Button>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Status & impact panels */}
       {company && (
@@ -290,8 +321,8 @@ export default function RecruiterCompanyPage() {
         </div>
       )}
 
-      {/* No company yet — guidance */}
-      {!company && !editing && (
+      {/* No company yet */}
+      {!serverError && !company && !editing && (
         <div className="rounded-2xl border border-dashed border-gray-300 bg-white p-8 text-center">
           <BuildingIcon className="mx-auto h-10 w-10 text-gray-300 mb-3" />
           <p className="font-medium text-gray-700">Bạn chưa có thông tin công ty</p>

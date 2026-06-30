@@ -228,7 +228,7 @@ export interface CoverLetterResponse {
 
 // ── CV Builder ────────────────────────────────────────────
 
-export type CvTemplate = 'MODERN' | 'CLASSIC' | 'CREATIVE';
+export type CvTemplate = 'MODERN' | 'CLASSIC' | 'CREATIVE' | 'PROFESSIONAL' | 'MINIMAL';
 
 export interface CvPersonalInfo {
   fullName: string;

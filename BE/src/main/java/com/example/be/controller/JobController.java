@@ -5,6 +5,7 @@ import com.example.be.dto.request.NaturalSearchRequest;
 import com.example.be.dto.response.JobResponse;
 import com.example.be.dto.response.NaturalSearchResponse;
 import com.example.be.entity.enums.JobLevel;
+import com.example.be.entity.enums.JobType;
 import com.example.be.repository.UserRepository;
 import com.example.be.service.inf.AiUsageLogService;
 import com.example.be.service.inf.JobService;
@@ -40,6 +41,8 @@ public class JobController {
             @RequestParam(required = false) String city,
             @RequestParam(required = false) JobLevel level,
             @RequestParam(required = false) String industry,
+            @RequestParam(required = false) JobType jobType,
+            @RequestParam(required = false) Long salaryMin,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
 
@@ -50,7 +53,7 @@ public class JobController {
         );
 
         return ResponseEntity.ok(
-                jobService.search(keyword, city, level, industry, pageable)
+                jobService.search(keyword, city, level, industry, jobType, salaryMin, pageable)
         );
     }
 
@@ -78,7 +81,7 @@ public class JobController {
         catch (IllegalArgumentException ignored) {}
 
         PageRequest pageable = PageRequest.of(0, 12, Sort.by("createdAt").descending());
-        Page<JobResponse> jobs = jobService.search(keyword, city, level, industry, pageable);
+        Page<JobResponse> jobs = jobService.search(keyword, city, level, industry, null, null, pageable);
 
         NaturalSearchResponse parsed = NaturalSearchResponse.builder()
                 .keyword(keyword).city(city).level(levelStr)

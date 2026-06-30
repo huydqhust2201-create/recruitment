@@ -13,6 +13,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.http.HttpStatus;
 
+import java.util.Optional;
 import java.util.UUID;
 
 @RestController
@@ -31,6 +32,16 @@ public class CompanyController {
         UUID userId = getUserId(userDetails);
         CompanyResponse response = companyService.create(request, userId);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    /** Trả về công ty gắn với recruiter đang đăng nhập — không cần biết ID */
+    @GetMapping("/me")
+    public ResponseEntity<CompanyResponse> getMyCompany(
+            @AuthenticationPrincipal UserDetails userDetails) {
+        UUID userId = getUserId(userDetails);
+        Optional<CompanyResponse> company = companyService.getByRecruiterId(userId);
+        return company.map(ResponseEntity::ok)
+                      .orElse(ResponseEntity.noContent().build());
     }
 
     @GetMapping("/{id}")
