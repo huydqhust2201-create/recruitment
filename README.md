@@ -6,7 +6,66 @@ Website tuyển dụng tích hợp AI hỗ trợ gợi ý việc làm, xây dự
 
 ---
 
-## Yêu cầu cài đặt
+## Cách chạy nhanh bằng Docker (Khuyến nghị)
+
+> Yêu cầu: chỉ cần cài **[Docker Desktop](https://www.docker.com/products/docker-desktop)**
+
+```bash
+# 1. Clone repo
+git clone <repo-url>
+cd recruitment
+
+# 2. Tạo file .env từ template
+cp .env.example .env
+
+# 3. Mở .env, điền OPENAI_API_KEY và JWT_SECRET
+#    (xem hướng dẫn trong file .env.example)
+
+# 4. Chạy toàn bộ hệ thống
+docker compose up --build
+```
+
+Sau ~3-5 phút (lần đầu build), truy cập:
+- **Frontend**: http://localhost:3001
+- **Backend API**: http://localhost:8080
+- **MinIO Console**: http://localhost:9001 (user: `minioadmin` / pass: `minioadmin`)
+
+**Seed dữ liệu demo** (chạy một lần sau khi hệ thống khởi động xong):
+
+```bash
+docker compose exec postgres psql -U postgres -d recruitment_db -f /docker-entrypoint-initdb.d/init.sql
+# Sau đó copy nội dung seed_demo.sql và chạy trong psql hoặc pgAdmin
+```
+
+Hoặc kết nối pgAdmin vào `localhost:5432` (user: `postgres`, pass: theo `DB_PASSWORD` trong `.env`) rồi chạy file `seed_demo.sql`.
+
+**Tạo tài khoản admin:**
+
+```bash
+docker compose exec postgres psql -U postgres -d recruitment_db -c \
+  "INSERT INTO users (id, email, password_hash, role, full_name, is_active, created_at, updated_at) VALUES (gen_random_uuid(), 'admin@demo.com', crypt('Admin@123', gen_salt('bf', 10)), 'ADMIN', 'Admin', true, NOW(), NOW()) ON CONFLICT (email) DO NOTHING;"
+```
+
+**Dừng hệ thống:**
+
+```bash
+docker compose down          # dừng, giữ data
+docker compose down -v       # dừng và xoá toàn bộ data
+```
+
+---
+
+## Lưu ý về key bí mật
+
+- **`OPENAI_API_KEY`**: bắt buộc để dùng tính năng AI. Đăng ký tại [platform.openai.com](https://platform.openai.com) — có $5 credit miễn phí khi đăng ký mới. Nếu không có key, app vẫn chạy, chỉ tắt phần AI.
+- **`JWT_SECRET`**: tự tạo — dùng `openssl rand -base64 32` hoặc gõ bất kỳ chuỗi 32+ ký tự.
+- Tất cả service khác (PostgreSQL, MinIO, VNPay sandbox) đã được cấu hình sẵn trong Docker, không cần đăng ký thêm.
+
+---
+
+## Cài đặt thủ công (không dùng Docker)
+
+### Yêu cầu cài đặt
 
 | Công cụ | Phiên bản tối thiểu |
 |---|---|
