@@ -8,8 +8,6 @@ import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 import org.hibernate.annotations.UuidGenerator;
-import org.hibernate.annotations.JdbcTypeCode;
-import org.hibernate.type.SqlTypes;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -92,8 +90,7 @@ public class Job {
 
     @Column(name = "apply_count", nullable = false)
     private int applyCount = 0;
-    @Column(name = "jd_embedding", columnDefinition = "vector(1536)")
-    @JdbcTypeCode(SqlTypes.VECTOR) // db hiá»ƒu kiá»ƒu dá»¯ liá»‡u
+    @Transient // vector(1536) — không map qua JDBC thường; dùng native query riêng
     private float[] jdEmbedding;
 
     @Column(name = "deadline")

@@ -7,8 +7,10 @@ import com.example.be.entity.enums.JobType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -74,6 +76,11 @@ public interface JobRepository extends JpaRepository<Job, UUID> {
     WHERE j.slug = :slug
 """)
     Optional<Job> findBySlugWithSkills(@Param("slug") String slug);
+
+    @Modifying
+    @Transactional
+    @Query(value = "UPDATE jobs SET jd_embedding = CAST(:embedding AS vector) WHERE id = CAST(:id AS uuid)", nativeQuery = true)
+    void updateEmbedding(@Param("id") String id, @Param("embedding") String embedding);
 
     @Query(value = """
             SELECT j.id,

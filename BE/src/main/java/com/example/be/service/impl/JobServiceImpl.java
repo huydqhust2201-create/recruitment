@@ -100,23 +100,28 @@ public class JobServiceImpl implements JobService {
     public JobResponse publish(UUID id, UUID recruiterId) {
         Job job = getJobAndValidateOwner(id, recruiterId);
 
-        // Táº¡o jd_embedding trÆ°á»›c khi publish
-        float[] embedding = embeddingService.createJobEmbedding(
-                job.getTitle(),
-                job.getDescription(),
-                job.getRequirements()
-        );
-
-        if (embedding != null) {
-            job.setJdEmbedding(embedding);
-            log.info("ÄÃ£ táº¡o jd_embedding cho job: {}", job.getTitle());
-        } else {
-            log.warn("KhÃ´ng táº¡o Ä‘Æ°á»£c embedding, publish váº«n tiáº¿p tá»¥c");
-        }
-
         job.setStatus(JobStatus.ACTIVE);
         job.setPublishedAt(LocalDateTime.now());
         jobRepository.save(job);
+
+        // Tao embedding sau khi save (dung native query de tranh JDBC vector type issue)
+        try {
+            float[] embedding = embeddingService.createJobEmbedding(
+                    job.getTitle(), job.getDescription(), job.getRequirements());
+            if (embedding != null) {
+                StringBuilder sb = new StringBuilder("[");
+                for (int i = 0; i < embedding.length; i++) {
+                    if (i > 0) sb.append(",");
+                    sb.append(embedding[i]);
+                }
+                sb.append("]");
+                jobRepository.updateEmbedding(job.getId().toString(), sb.toString());
+                log.info("Da luu jd_embedding cho job: {}", job.getTitle());
+            }
+        } catch (Exception e) {
+            log.warn("Khong luu duoc embedding, publish van tiep tuc: {}", e.getMessage());
+        }
+
         return mapToResponse(job);
     }
 
