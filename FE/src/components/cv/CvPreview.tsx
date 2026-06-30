@@ -131,7 +131,7 @@ function StandardLayout({ content, colors }: { content: CvBuilderContent; colors
             {content.certifications.map((c, i) => (
               <div key={i} style={{ marginBottom: 4 }}>
                 <p style={{ fontWeight: 600, color: '#222' }}>{c.name}</p>
-                {c.issuer && <p style={{ color: '#888', fontSize: 9 }}>{c.issuer}{c.date ? ` · ${c.date}` : ''}</p>}
+                {c.issuer && <p style={{ color: '#888', fontSize: 9 }}>{c.issuer}{c.issuedDate ? ` · ${c.issuedDate}` : ''}</p>}
               </div>
             ))}
           </div>
