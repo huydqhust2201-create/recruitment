@@ -49,7 +49,7 @@ const SAMPLE: CvBuilderContent = {
   ],
   skills: ['React', 'TypeScript', 'Next.js', 'Node.js', 'Tailwind CSS', 'PostgreSQL'],
   certifications: [
-    { name: 'AWS Certified Developer', issuer: 'Amazon Web Services', date: '2023' },
+    { name: 'AWS Certified Developer', issuer: 'Amazon Web Services', issuedDate: '2023' },
   ],
   languages: [
     { name: 'Tiếng Anh', level: 'IELTS 7.0' },
