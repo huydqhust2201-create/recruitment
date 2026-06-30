@@ -7,7 +7,7 @@ Website tuyển dụng tích hợp AI hỗ trợ gợi ý việc làm, xây dự
 ---
 
 ## Yêu cầu cài đặt
-
+"Để chạy đầy đủ tính năng AI, cần cung cấp OPENAI_API_KEY từ tài khoản cá nhân tại platform.openai.com. Hệ thống vẫn hoạt động bình thường nếu thiếu key này, chỉ vô hiệu hoá các tính năng AI."
 | Công cụ | Phiên bản tối thiểu |
 |---|---|
 | Java JDK | 21 |
