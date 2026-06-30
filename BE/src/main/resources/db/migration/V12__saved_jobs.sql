@@ -1,5 +1,5 @@
 CREATE TABLE IF NOT EXISTS saved_jobs (
-    id           UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     candidate_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     job_id       UUID NOT NULL REFERENCES jobs(id) ON DELETE CASCADE,
     saved_at     TIMESTAMPTZ NOT NULL DEFAULT NOW(),
