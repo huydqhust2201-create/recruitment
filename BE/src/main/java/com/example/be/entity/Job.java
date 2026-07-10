@@ -75,6 +75,7 @@ public class Job {
     @Column(name = "salary_max")
     private Long salaryMax;
 
+    @Builder.Default
     @Column(length = 10)
     private String currency = "VND";
 
