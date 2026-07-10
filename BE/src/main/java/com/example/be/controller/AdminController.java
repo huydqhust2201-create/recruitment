@@ -2,13 +2,19 @@ package com.example.be.controller;
 
 import com.example.be.dto.response.AdminStatsResponse;
 import com.example.be.entity.Company;
+import com.example.be.entity.Job;
 import com.example.be.entity.User;
+import com.example.be.entity.enums.JobStatus;
 import com.example.be.entity.enums.Role;
 import com.example.be.repository.*;
+import com.example.be.service.inf.AiScoringService;
+import com.example.be.service.inf.EmbeddingService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
@@ -16,8 +22,10 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/admin")
 @RequiredArgsConstructor
@@ -29,6 +37,9 @@ public class AdminController {
     private final ApplicationRepository applicationRepository;
     private final CompanySubscriptionRepository subscriptionRepository;
     private final RecruiterProfileRepository recruiterProfileRepository;
+    private final EmbeddingService embeddingService;
+    private final AiScoringService aiScoringService;
+    private final AiScoreResultRepository aiScoreResultRepository;
 
     @Transactional(readOnly = true)
     @GetMapping("/stats")
@@ -182,5 +193,72 @@ public class AdminController {
         user.setActive(!user.isActive());
         userRepository.save(user);
         return ResponseEntity.ok(Map.of("id", user.getId(), "isActive", user.isActive()));
+    }
+
+    @PostMapping("/jobs/generate-embeddings")
+    public ResponseEntity<Map<String, Object>> generateJobEmbeddings() {
+        // jdEmbedding là @Transient nên dùng native query để lọc jobs chưa có embedding
+        List<Job> jobs = jobRepository.findJobsWithoutEmbedding();
+
+        int total = jobs.size();
+        AtomicInteger success = new AtomicInteger(0);
+        AtomicInteger failed = new AtomicInteger(0);
+
+        new Thread(() -> {
+            for (Job job : jobs) {
+                try {
+                    float[] embedding = embeddingService.createJobEmbedding(
+                            job.getTitle(), job.getDescription(), job.getRequirements());
+                    if (embedding != null) {
+                        StringBuilder sb = new StringBuilder("[");
+                        for (int i = 0; i < embedding.length; i++) {
+                            if (i > 0) sb.append(",");
+                            sb.append(embedding[i]);
+                        }
+                        sb.append("]");
+                        jobRepository.updateEmbedding(job.getId().toString(), sb.toString());
+                        success.incrementAndGet();
+                        log.info("Embedding done: {} ({}/{})", job.getTitle(), success.get(), total);
+                    }
+                    Thread.sleep(200);
+                } catch (Exception e) {
+                    failed.incrementAndGet();
+                    log.warn("Embedding failed for job {}: {}", job.getId(), e.getMessage());
+                }
+            }
+            log.info("Batch embedding complete: {}/{} success, {} failed", success.get(), total, failed.get());
+        }).start();
+
+        return ResponseEntity.ok(Map.of(
+                "message", "Đang generate embeddings cho " + total + " jobs ở background",
+                "total", total));
+    }
+
+    @PostMapping("/applications/score-all")
+    public ResponseEntity<Map<String, Object>> scoreAllApplications() {
+        List<UUID> unscored = applicationRepository.findAll().stream()
+                .filter(a -> aiScoreResultRepository.findByApplicationId(a.getId()).isEmpty())
+                .map(a -> a.getId())
+                .collect(Collectors.toList());
+
+        int total = unscored.size();
+        new Thread(() -> {
+            AtomicInteger done = new AtomicInteger(0);
+            for (UUID appId : unscored) {
+                try {
+                    aiScoringService.scoreApplication(appId);
+                    done.incrementAndGet();
+                    log.info("Scored {}/{}", done.get(), total);
+                    Thread.sleep(500);
+                } catch (Exception e) {
+                    log.warn("Score failed for application {}: {}", appId, e.getMessage());
+                }
+            }
+            log.info("Batch scoring complete: {}/{}", done.get(), total);
+        }).start();
+
+        return ResponseEntity.ok(Map.of(
+                "message", "Đang chấm điểm AI cho " + total + " applications ở background",
+                "total", total));
     }
 }

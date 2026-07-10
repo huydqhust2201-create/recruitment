@@ -82,6 +82,9 @@ public interface JobRepository extends JpaRepository<Job, UUID> {
     @Query(value = "UPDATE jobs SET jd_embedding = CAST(:embedding AS vector) WHERE id = CAST(:id AS uuid)", nativeQuery = true)
     void updateEmbedding(@Param("id") String id, @Param("embedding") String embedding);
 
+    @Query(value = "SELECT * FROM jobs WHERE status = 'ACTIVE' AND jd_embedding IS NULL", nativeQuery = true)
+    List<Job> findJobsWithoutEmbedding();
+
     @Query(value = """
             SELECT j.id,
                    (1 - (j.jd_embedding <=> CAST(:embedding AS vector))) AS similarity_score
