@@ -52,7 +52,9 @@ public class CvTextExtractorServiceImpl implements CvTextExtractorService {
         if (text == null) {
             return null;
         }
-        String normalized = text.replaceAll("\\s+", " ").trim();
+        // Strip null bytes and other control chars PostgreSQL rejects in UTF-8
+        String sanitized = text.replaceAll("[\\x00-\\x08\\x0B\\x0C\\x0E-\\x1F]", "");
+        String normalized = sanitized.replaceAll("\\s+", " ").trim();
         if (normalized.length() <= MAX_TEXT_LENGTH) {
             return normalized;
         }
