@@ -237,7 +237,12 @@ public class AdminController {
     @PostMapping("/applications/score-all")
     public ResponseEntity<Map<String, Object>> scoreAllApplications() {
         List<UUID> unscored = applicationRepository.findAll().stream()
-                .filter(a -> aiScoreResultRepository.findByApplicationId(a.getId()).isEmpty())
+                .filter(a -> {
+                    var existing = aiScoreResultRepository.findByApplicationId(a.getId());
+                    return existing.isEmpty()
+                            || existing.get().getFinalScore() == null
+                            || existing.get().getFinalScore() == 0.0;
+                })
                 .map(a -> a.getId())
                 .collect(Collectors.toList());
 
