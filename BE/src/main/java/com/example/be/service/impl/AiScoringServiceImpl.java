@@ -53,6 +53,10 @@ public class AiScoringServiceImpl implements AiScoringService {
         Job job = application.getJob();
         User candidate = application.getCandidate();
         CvFile cvFile = application.getCvFile();
+        if (cvFile == null) {
+            log.warn("Application {} has no CV file, skipping AI scoring", applicationId);
+            throw new RuntimeException("No CV file attached to application");
+        }
 
         JobCriteria criteria = jobCriteriaRepository.findByJobId(job.getId()).orElse(null);
         int skillWeight = criteria != null ? criteria.getSkillWeight() : 40;
