@@ -27,10 +27,6 @@ const JOB_LEVEL_OPTIONS = [
   { value: 'LEAD', label: 'Lead' },
   { value: 'MANAGER', label: 'Manager' },
 ];
-const SALARY_OPTIONS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20, 25, 30, 40, 50].map((m) => ({
-  value: String(m * 1_000_000),
-  label: `${m} triệu`,
-}));
 
 const CITY_OPTIONS = ['Hà Nội', 'Hồ Chí Minh', 'Đà Nẵng', 'Cần Thơ', 'Hải Phòng', 'Toàn quốc', 'Khác'].map(
   (c) => ({ value: c, label: c })
@@ -120,8 +116,8 @@ export default function CreateJobPage() {
         level: form.level,
         industry: form.industry || undefined,
         city: form.city,
-        salaryMin: form.salaryMin ? Number(form.salaryMin) : undefined,
-        salaryMax: form.salaryMax ? Number(form.salaryMax) : undefined,
+        salaryMin: form.salaryMin ? Number(form.salaryMin) * 1_000_000 : undefined,
+        salaryMax: form.salaryMax ? Number(form.salaryMax) * 1_000_000 : undefined,
         isSalaryPublic: form.isSalaryPublic,
         deadline: form.deadline || undefined,
         skills: skills.map((s) => ({ skillName: s.skillName, isRequired: s.isRequired, level: s.level || undefined })),
@@ -193,17 +189,17 @@ export default function CreateJobPage() {
       {/* Salary */}
       <FormSection title="Mức lương">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-          <Select
-            label="Lương tối thiểu (VND)"
-            options={SALARY_OPTIONS}
-            placeholder="Chọn mức lương"
+          <Input
+            label="Lương tối thiểu (triệu VNĐ)"
+            type="number"
+            placeholder="VD: 15"
             value={form.salaryMin}
             onChange={(e) => setForm({ ...form, salaryMin: e.target.value })}
           />
-          <Select
-            label="Lương tối đa (VND)"
-            options={SALARY_OPTIONS}
-            placeholder="Chọn mức lương"
+          <Input
+            label="Lương tối đa (triệu VNĐ)"
+            type="number"
+            placeholder="VD: 30"
             value={form.salaryMax}
             onChange={(e) => setForm({ ...form, salaryMax: e.target.value })}
             error={errors.salaryMax}
