@@ -11,12 +11,14 @@ import com.example.be.repository.UserRepository;
 import com.example.be.service.inf.CompanyService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import java.text.Normalizer;
 
 import java.util.Optional;
 import java.util.UUID;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class CompanyServiceImpl implements CompanyService {
@@ -29,16 +31,20 @@ public class CompanyServiceImpl implements CompanyService {
     @Transactional
     public CompanyResponse create(CompanyRequest request, UUID userId) {
 
-        // Neu recruiter da co cong ty, cap nhat thay vi tao moi
-        Optional<RecruiterProfile> existingProfile = recruiterProfileRepository.findByUserId(userId);
-        if (existingProfile.isPresent() && existingProfile.get().getCompany() != null) {
-            UUID existingCompanyId = existingProfile.get().getCompany().getId();
-            return update(existingCompanyId, request, userId);
+        // Kiem tra trung: cung ten VA cung website moi la cung cong ty
+        String website = request.getWebsite();
+        boolean isDuplicate;
+        if (website != null && !website.isBlank()) {
+            isDuplicate = companyRepository.existsByNameAndWebsite(request.getName(), website);
+        } else {
+            isDuplicate = companyRepository.existsByName(request.getName());
         }
 
-        // Kiem tra ten cong ty da ton tai chua (chi khi tao moi)
-        if (companyRepository.existsByName(request.getName())) {
-            throw new RuntimeException("Ten cong ty da ton tai, vui long chon ten khac");
+        if (isDuplicate) {
+            log.warn("[Company] Tao that bai - cong ty da ton tai: name='{}', website='{}'",
+                    request.getName(), website);
+            throw new RuntimeException(
+                    "Công ty '" + request.getName() + "' với website '" + website + "' đã tồn tại trong hệ thống");
         }
 
         String slug = generateSlug(request.getName());
@@ -54,11 +60,13 @@ public class CompanyServiceImpl implements CompanyService {
                 .build();
 
         companyRepository.save(company);
+        log.info("[Company] Tao thanh cong: name='{}', slug='{}', userId={}",
+                company.getName(), company.getSlug(), userId);
 
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User khong ton tai"));
 
-        RecruiterProfile profile = existingProfile
+        RecruiterProfile profile = recruiterProfileRepository.findByUserId(userId)
                 .orElse(RecruiterProfile.builder().user(user).build());
         profile.setCompany(company);
         recruiterProfileRepository.save(profile);
