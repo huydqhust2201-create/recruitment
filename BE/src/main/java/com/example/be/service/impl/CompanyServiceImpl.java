@@ -9,6 +9,7 @@ import com.example.be.repository.CompanyRepository;
 import com.example.be.repository.RecruiterProfileRepository;
 import com.example.be.repository.UserRepository;
 import com.example.be.service.inf.CompanyService;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import java.text.Normalizer;
@@ -25,17 +26,23 @@ public class CompanyServiceImpl implements CompanyService {
     private final UserRepository userRepository;
 
     @Override
+    @Transactional
     public CompanyResponse create(CompanyRequest request, UUID userId) {
 
-        // 1. Kiem tra ten cong ty da ton tai chua
-        if (companyRepository.existsByName(request.getName())) {
-            throw new RuntimeException("Ten cong ty da ton tai");
+        // Neu recruiter da co cong ty, cap nhat thay vi tao moi
+        Optional<RecruiterProfile> existingProfile = recruiterProfileRepository.findByUserId(userId);
+        if (existingProfile.isPresent() && existingProfile.get().getCompany() != null) {
+            UUID existingCompanyId = existingProfile.get().getCompany().getId();
+            return update(existingCompanyId, request, userId);
         }
 
-        // 2. Tao slug tu ten cong ty
+        // Kiem tra ten cong ty da ton tai chua (chi khi tao moi)
+        if (companyRepository.existsByName(request.getName())) {
+            throw new RuntimeException("Ten cong ty da ton tai, vui long chon ten khac");
+        }
+
         String slug = generateSlug(request.getName());
 
-        // 3. Tao company
         Company company = Company.builder()
                 .name(request.getName())
                 .slug(slug)
@@ -48,11 +55,10 @@ public class CompanyServiceImpl implements CompanyService {
 
         companyRepository.save(company);
 
-        // 4. Gan company vao recruiter profile (tao moi hoac cap nhat)
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User khong ton tai"));
 
-        RecruiterProfile profile = recruiterProfileRepository.findByUserId(userId)
+        RecruiterProfile profile = existingProfile
                 .orElse(RecruiterProfile.builder().user(user).build());
         profile.setCompany(company);
         recruiterProfileRepository.save(profile);
@@ -81,6 +87,7 @@ public class CompanyServiceImpl implements CompanyService {
     }
 
     @Override
+    @Transactional
     public CompanyResponse update(UUID id, CompanyRequest request, UUID userId) {
         Company company = companyRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Khong tim thay cong ty"));
