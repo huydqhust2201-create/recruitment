@@ -71,6 +71,6 @@ springdoc:
 
 vnpay:
   pay-url: https://sandbox.vnpayment.vn/paymentv2/vpcpay.html
-  tmn-code: ${VNPAY_TMN_CODE:CGPNBGEI}
-  hash-secret: ${VNPAY_HASH_SECRET:RAOEXHYVSDDIIENYWSLDIIZTBEIYGHWT}
-  return-url: ${VNPAY_RETURN_URL:http://localhost:3001/recruiter/subscription}
+  tmn-code: ${VNPAY_TMN_CODE}
+  hash-secret: ${VNPAY_HASH_SECRET}
+  return-url: ${VNPAY_RETURN_URL}
