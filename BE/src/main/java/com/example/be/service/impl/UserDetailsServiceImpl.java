@@ -24,6 +24,10 @@ public class UserDetailsServiceImpl implements UserDetailsService {
                 .map(user -> new org.springframework.security.core.userdetails.User(
                         user.getEmail(),
                         user.getPasswordHash(),
+                        user.isActive(),   // enabled — false khi admin khoá
+                        true,              // accountNonExpired
+                        true,              // credentialsNonExpired
+                        true,              // accountNonLocked
                         List.of(new SimpleGrantedAuthority("ROLE_" + user.getRole().name()))
                 ))
                 .orElseThrow(() -> new UsernameNotFoundException(
