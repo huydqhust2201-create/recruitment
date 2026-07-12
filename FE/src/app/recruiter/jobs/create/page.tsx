@@ -116,8 +116,8 @@ export default function CreateJobPage() {
         level: form.level,
         industry: form.industry || undefined,
         city: form.city,
-        salaryMin: form.salaryMin ? Number(form.salaryMin) * 1_000_000 : undefined,
-        salaryMax: form.salaryMax ? Number(form.salaryMax) * 1_000_000 : undefined,
+        salaryMin: form.salaryMin ? Math.round(Number(form.salaryMin) * 1_000_000) : undefined,
+        salaryMax: form.salaryMax ? Math.round(Number(form.salaryMax) * 1_000_000) : undefined,
         isSalaryPublic: form.isSalaryPublic,
         deadline: form.deadline || undefined,
         skills: skills.map((s) => ({ skillName: s.skillName, isRequired: s.isRequired, level: s.level || undefined })),
@@ -192,13 +192,15 @@ export default function CreateJobPage() {
           <Input
             label="Lương tối thiểu (triệu VNĐ)"
             type="number"
-            placeholder="VD: 15"
+            step="0.1"
+            placeholder="VD: 1.4"
             value={form.salaryMin}
             onChange={(e) => setForm({ ...form, salaryMin: e.target.value })}
           />
           <Input
             label="Lương tối đa (triệu VNĐ)"
             type="number"
+            step="0.1"
             placeholder="VD: 30"
             value={form.salaryMax}
             onChange={(e) => setForm({ ...form, salaryMax: e.target.value })}
