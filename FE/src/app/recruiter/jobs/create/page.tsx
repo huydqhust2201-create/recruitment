@@ -27,6 +27,10 @@ const JOB_LEVEL_OPTIONS = [
   { value: 'LEAD', label: 'Lead' },
   { value: 'MANAGER', label: 'Manager' },
 ];
+const SALARY_OPTIONS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20, 25, 30, 40, 50].map((m) => ({
+  value: String(m * 1_000_000),
+  label: `${m} triệu`,
+}));
 
 const CITY_OPTIONS = ['Hà Nội', 'Hồ Chí Minh', 'Đà Nẵng', 'Cần Thơ', 'Hải Phòng', 'Toàn quốc', 'Khác'].map(
   (c) => ({ value: c, label: c })
@@ -189,17 +193,17 @@ export default function CreateJobPage() {
       {/* Salary */}
       <FormSection title="Mức lương">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-          <Input
+          <Select
             label="Lương tối thiểu (VND)"
-            type="number"
-            placeholder="15000000"
+            options={SALARY_OPTIONS}
+            placeholder="Chọn mức lương"
             value={form.salaryMin}
             onChange={(e) => setForm({ ...form, salaryMin: e.target.value })}
           />
-          <Input
+          <Select
             label="Lương tối đa (VND)"
-            type="number"
-            placeholder="30000000"
+            options={SALARY_OPTIONS}
+            placeholder="Chọn mức lương"
             value={form.salaryMax}
             onChange={(e) => setForm({ ...form, salaryMax: e.target.value })}
             error={errors.salaryMax}
