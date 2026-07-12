@@ -47,6 +47,7 @@ public class Company {
     @Column(length = 100)
     private String city;
 
+    @Builder.Default
     @Column(length = 100)
     private String country = "Vietnam";
 
