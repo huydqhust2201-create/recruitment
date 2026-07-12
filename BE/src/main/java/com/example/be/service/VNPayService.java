@@ -8,7 +8,8 @@ import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Map;
 import java.util.TreeMap;
@@ -34,12 +35,11 @@ public class VNPayService {
         params.put("vnp_IpAddr", ipAddr != null ? ipAddr : "127.0.0.1");
 
         DateTimeFormatter fmt = DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
-        LocalDateTime now = LocalDateTime.now();
+        ZonedDateTime now = ZonedDateTime.now(ZoneId.of("Asia/Ho_Chi_Minh"));
         params.put("vnp_CreateDate", now.format(fmt));
         params.put("vnp_ExpireDate", now.plusMinutes(15).format(fmt));
 
-        // Build hash data (raw values, sorted alphabetically)
-        // Build query string (URL-encoded values, sorted alphabetically)
+        // VNPay v2.1.0: cả hashData và query đều dùng URL-encoded values
         StringBuilder hashData = new StringBuilder();
         StringBuilder query = new StringBuilder();
         boolean first = true;
@@ -48,10 +48,10 @@ public class VNPayService {
                 hashData.append('&');
                 query.append('&');
             }
-            hashData.append(entry.getKey()).append('=').append(entry.getValue());
-            query.append(URLEncoder.encode(entry.getKey(), StandardCharsets.UTF_8))
-                 .append('=')
-                 .append(URLEncoder.encode(entry.getValue(), StandardCharsets.UTF_8));
+            String encodedKey   = URLEncoder.encode(entry.getKey(),   StandardCharsets.US_ASCII);
+            String encodedValue = URLEncoder.encode(entry.getValue(), StandardCharsets.US_ASCII);
+            hashData.append(encodedKey).append('=').append(encodedValue);
+            query   .append(encodedKey).append('=').append(encodedValue);
             first = false;
         }
 
@@ -72,7 +72,9 @@ public class VNPayService {
         for (Map.Entry<String, String> entry : filtered.entrySet()) {
             if (entry.getValue() != null && !entry.getValue().isEmpty()) {
                 if (!first) hashData.append('&');
-                hashData.append(entry.getKey()).append('=').append(entry.getValue());
+                hashData.append(URLEncoder.encode(entry.getKey(),   StandardCharsets.US_ASCII))
+                        .append('=')
+                        .append(URLEncoder.encode(entry.getValue(), StandardCharsets.US_ASCII));
                 first = false;
             }
         }
