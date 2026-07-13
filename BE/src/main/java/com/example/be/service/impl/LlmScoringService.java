@@ -53,7 +53,7 @@ public class LlmScoringService {
                     Lưu ý:
                     - matched_skills: tối đa 6 kỹ năng ứng viên ĐÃ có và phù hợp với yêu cầu
                     - missing_skills: tối đa 5 kỹ năng/kinh nghiệm quan trọng mà ứng viên CHƯA có hoặc chưa đề cập
-                    - improvement_suggestions: 3 gợi ý cụ thể giúp ứng viên tăng cơ hội (viết cho ứng viên đọc, dùng "bạn")
+                    - improvement_suggestions: 3 gợi ý cụ thể giúp ứng viên tăng cơ hội PHÙ HỢP VỚI VỊ TRÍ VÀ NGÀNH NGHỀ NÀY (không đề xuất kỹ năng thuộc ngành khác không liên quan, dùng "bạn")
                     - Tất cả text phải bằng tiếng Việt
                     """;
 
